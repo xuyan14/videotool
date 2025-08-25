@@ -1,0 +1,32 @@
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+*.log
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node.js (如果有的话)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python (如果有的话)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# 其他
+*.bak
+*.orig
