@@ -302,8 +302,27 @@
 
                 <!-- 步骤2：脚本生成 -->
                 <div class="step-content" id="step2">
-                    <div class="step-header">
-                        <h3>脚本生成</h3>
+                    <!-- 商品信息展示模块 -->
+                    <div class="product-info-display" id="productInfoDisplay">
+                        <div class="product-info-header">
+                            <i class="fas fa-info-circle"></i>
+                            <span>确认的商品信息</span>
+                        </div>
+                        <div class="product-info-content">
+                            <div class="product-info-row">
+                                <label>商品标题：</label>
+                                <span class="product-title" id="confirmedProductTitle">儿童纯棉百搭小清新碎花上衣</span>
+                            </div>
+                            <div class="product-info-row">
+                                <label>商品卖点：</label>
+                                <div class="product-selling-points" id="confirmedSellingPoints">
+                                    <span class="selling-point-tag">亲肤柔软</span>
+                                    <span class="selling-point-tag">透气不闷热</span>
+                                    <span class="selling-point-tag">荷叶领口</span>
+                                    <span class="selling-point-tag">纯棉面料</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="script-generation-layout">
@@ -382,9 +401,13 @@
                                 <!-- 字数范围 -->
                                 <div class="config-item">
                                     <label class="required">字数范围</label>
-                                    <div class="word-count-display">
-                                        <span class="word-count">50-75字</span>
-                                        <span class="duration-hint">≈10-15S正常口播时长</span>
+                                    <div class="word-count-selector">
+                                        <select class="config-select" id="wordCountRange" onchange="updateWordCountDisplay()">
+                                            <option value="50-75">50-75字 (≈10-15S正常口播时长)</option>
+                                            <option value="75-150">75-150字 (≈15-30S正常口播时长)</option>
+                                            <option value="150-300">150-300字 (≈30-60S正常口播时长)</option>
+                                            <option value="300+">≥300字 (≈60S正常口播时长)</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -395,17 +418,48 @@
                                 <div class="config-item">
                                     <label>爆款脚本</label>
                                     <div class="hot-script-section">
-                                        <select class="config-select" id="categorySelect" onchange="updateRecommendationByCategory()">
-                                            <option value="">选择品类: 请选择▼</option>
-                                            <option value="clothing">服装鞋帽</option>
-                                            <option value="beauty">美妆护肤</option>
-                                            <option value="digital">数码家电</option>
-                                            <option value="food">食品饮料</option>
-                                            <option value="home">家居用品</option>
-                                            <option value="sports">运动户外</option>
-                                        </select>
-                                        <input type="text" class="config-input" value="亲肤柔软 透气不闷热" placeholder="请输入商品卖点">
-                                        <small class="config-hint">填写上方商品卖点会自动匹配到该栏</small>
+                                        <!-- 三级品类选择器 -->
+                                        <div class="category-selector" id="categorySelector">
+                                            <div class="category-level" id="level1">
+                                                <div class="category-header" onclick="toggleCategoryLevel('level1')">
+                                                    <span class="category-label">一级品类</span>
+                                                    <span class="category-placeholder" style="color: #333;">服装鞋帽</span>
+                                                    <i class="fas fa-chevron-down expand-icon"></i>
+                                                </div>
+                                                <div class="category-options" id="level1Options">
+                                                    <!-- 一级品类选项将通过JavaScript动态生成 -->
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="category-level" id="level2">
+                                                <div class="category-header" onclick="toggleCategoryLevel('level2')">
+                                                    <span class="category-label">二级品类</span>
+                                                    <span class="category-placeholder" style="color: #333;">女装</span>
+                                                    <i class="fas fa-chevron-down expand-icon"></i>
+                                                </div>
+                                                <div class="category-options" id="level2Options">
+                                                    <!-- 二级品类选项将通过JavaScript动态生成 -->
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="category-level" id="level3">
+                                                <div class="category-header" onclick="toggleCategoryLevel('level3')">
+                                                    <span class="category-label">三级品类</span>
+                                                    <span class="category-placeholder" style="color: #333;">上衣</span>
+                                                    <i class="fas fa-chevron-down expand-icon"></i>
+                                                </div>
+                                                <div class="category-options" id="level3Options">
+                                                    <!-- 三级品类选项将通过JavaScript动态生成 -->
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 当前选择显示 -->
+                                            <div class="selected-category" id="selectedCategory" style="display: flex;">
+                                                <span class="selected-label">已选择：</span>
+                                                <span class="selected-path" id="selectedPath">服装鞋帽 > 女装 > 上衣</span>
+                                                <button class="btn btn-sm btn-outline" onclick="clearCategorySelection()">重新选择</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -461,75 +515,127 @@
                         <p>基于脚本和素材进行智能混剪，生成最终视频</p>
                     </div>
                     
-                    <div class="video-mixing">
-                        <!-- 素材预览 -->
-                        <div class="material-preview">
-                            <h4>可用素材</h4>
-                            <div class="material-grid">
-                                <div class="material-item">
-                                    <img src="https://via.placeholder.com/150x100/90EE90/000000?text=素材1" alt="素材">
-                                    <span class="material-duration">15s</span>
+                    <div class="video-editing-layout">
+                        <!-- 左侧脚本区域 -->
+                        <div class="script-panel">
+                            <div class="panel-header">
+                                <h4>脚本内容</h4>
+                                <span class="script-duration">预计时长：45秒</span>
+                            </div>
+                            <div class="script-content" id="scriptContent">
+                                <div class="script-sentence" data-segment="1" data-time="0-8">
+                                    <span class="sentence-number">1</span>
+                                    <span class="sentence-text">大家好，今天给大家推荐一款超美的儿童纯棉上衣！</span>
+                                    <span class="sentence-duration">8s</span>
                                 </div>
-                                <div class="material-item">
-                                    <img src="https://via.placeholder.com/150x100/87CEEB/000000?text=素材2" alt="素材">
-                                    <span class="material-duration">20s</span>
+                                <div class="script-sentence" data-segment="2" data-time="8-18">
+                                    <span class="sentence-number">2</span>
+                                    <span class="sentence-text">这款小清新碎花上衣采用100%纯棉面料制作，亲肤柔软透气不闷热。</span>
+                                    <span class="sentence-duration">10s</span>
                                 </div>
-                                <div class="material-item">
-                                    <img src="https://via.placeholder.com/150x100/DDA0DD/000000?text=素材3" alt="素材">
-                                    <span class="material-duration">12s</span>
+                                <div class="script-sentence" data-segment="3" data-time="18-28">
+                                    <span class="sentence-number">3</span>
+                                    <span class="sentence-text">荷叶领口设计甜美可爱，碎花图案时尚百搭。</span>
+                                    <span class="sentence-duration">10s</span>
+                                </div>
+                                <div class="script-sentence" data-segment="4" data-time="28-38">
+                                    <span class="sentence-number">4</span>
+                                    <span class="sentence-text">无论是日常穿搭还是聚会场合都能轻松驾驭。</span>
+                                    <span class="sentence-duration">10s</span>
+                                </div>
+                                <div class="script-sentence" data-segment="5" data-time="38-45">
+                                    <span class="sentence-number">5</span>
+                                    <span class="sentence-text">妈妈们快来给宝贝选购吧！</span>
+                                    <span class="sentence-duration">7s</span>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 混剪设置 -->
-                        <div class="mixing-settings">
-                            <h4>混剪设置</h4>
-                            <div class="setting-options">
-                                <div class="setting-item">
-                                    <label>
-                                        <input type="checkbox" checked>
-                                        自动匹配素材片段
-                                    </label>
+                        
+                        <!-- 右侧镜头区域 -->
+                        <div class="shots-panel">
+                            <div class="panel-header">
+                                <h4>镜头画面</h4>
+                                <span class="shots-count">共5个镜头</span>
+                            </div>
+                            <div class="shots-grid" id="shotsGrid">
+                                <div class="shot-item" data-segment="1" onclick="selectShot(1)">
+                                    <div class="shot-thumbnail">
+                                        <img src="https://via.placeholder.com/200x150/FF6B6B/FFFFFF?text=开场介绍" alt="镜头1">
+                                        <div class="shot-overlay">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                    </div>
+                                    <div class="shot-info">
+                                        <span class="shot-number">镜头1</span>
+                                        <span class="shot-duration">0-8s</span>
+                                        <span class="shot-description">开场介绍</span>
+                                    </div>
                                 </div>
-                                <div class="setting-item">
-                                    <label>
-                                        <input type="checkbox">
-                                        手动调整片段顺序
-                                    </label>
+                                
+                                <div class="shot-item" data-segment="2" onclick="selectShot(2)">
+                                    <div class="shot-thumbnail">
+                                        <img src="https://via.placeholder.com/200x150/4ECDC4/FFFFFF?text=面料展示" alt="镜头2">
+                                        <div class="shot-overlay">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                    </div>
+                                    <div class="shot-info">
+                                        <span class="shot-number">镜头2</span>
+                                        <span class="shot-duration">8-18s</span>
+                                        <span class="shot-description">面料质感展示</span>
+                                    </div>
                                 </div>
-                                <div class="setting-item">
-                                    <label>
-                                        <input type="checkbox">
-                                        添加前贴/后贴视频
-                                    </label>
+                                
+                                <div class="shot-item" data-segment="3" onclick="selectShot(3)">
+                                    <div class="shot-thumbnail">
+                                        <img src="https://via.placeholder.com/200x150/45B7D1/FFFFFF?text=设计细节" alt="镜头3">
+                                        <div class="shot-overlay">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                    </div>
+                                    <div class="shot-info">
+                                        <span class="shot-number">镜头3</span>
+                                        <span class="shot-duration">18-28s</span>
+                                        <span class="shot-description">荷叶领口设计</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="shot-item" data-segment="4" onclick="selectShot(4)">
+                                    <div class="shot-thumbnail">
+                                        <img src="https://via.placeholder.com/200x150/F7DC6F/FFFFFF?text=搭配展示" alt="镜头4">
+                                        <div class="shot-overlay">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                    </div>
+                                    <div class="shot-info">
+                                        <span class="shot-number">镜头4</span>
+                                        <span class="shot-duration">28-38s</span>
+                                        <span class="shot-description">搭配场景展示</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="shot-item" data-segment="5" onclick="selectShot(5)">
+                                    <div class="shot-thumbnail">
+                                        <img src="https://via.placeholder.com/200x150/BB8FCE/FFFFFF?text=购买引导" alt="镜头5">
+                                        <div class="shot-overlay">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                    </div>
+                                    <div class="shot-info">
+                                        <span class="shot-number">镜头5</span>
+                                        <span class="shot-duration">38-45s</span>
+                                        <span class="shot-description">购买引导</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- 混剪进度 -->
-                        <div class="mixing-progress">
-                            <h4>混剪进度</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 0%"></div>
-                            </div>
-                            <div class="progress-text">准备中...</div>
-                        </div>
-
-                        <!-- 预览区域 -->
-                        <div class="video-preview" id="videoPreview" style="display: none;">
-                            <h4>视频预览</h4>
-                            <div class="preview-container">
-                                <video controls>
-                                    <source src="" type="video/mp4">
-                                    您的浏览器不支持视频播放
-                                </video>
-                            </div>
-                            <div class="preview-actions">
-                                <button class="btn btn-primary" onclick="approveVideo()">审核通过</button>
-                                <button class="btn btn-secondary" onclick="rejectVideo()">审核不通过</button>
-                                <button class="btn btn-outline" onclick="editVideo()">编辑视频</button>
-                            </div>
-                        </div>
+                    </div>
+                    
+                    <!-- 底部操作区域 -->
+                    <div class="video-actions">
+                        <button class="btn btn-outline" onclick="previewVideo()">预览视频</button>
+                        <button class="btn btn-secondary" onclick="editShots()">编辑镜头</button>
+                        <button class="btn btn-primary" onclick="generateVideo()">生成视频</button>
                     </div>
                 </div>
 
@@ -632,11 +738,21 @@
         </div>
     </div>
 
+    <!-- 任务抽屉背景遮罩 -->
+    <div id="taskDrawerOverlay" class="task-drawer-overlay" onclick="closeTaskDrawer()"></div>
+    
     <!-- 任务抽屉 -->
     <div id="taskDrawer" class="task-drawer">
         <div class="drawer-header">
             <h3>任务列表</h3>
-            <button class="drawer-close" onclick="closeTaskDrawer()">&times;</button>
+            <div class="drawer-close-actions">
+                <button class="drawer-minimize" onclick="minimizeTaskDrawer()" title="最小化">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="drawer-close" onclick="closeTaskDrawer()" title="关闭">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
         <div class="drawer-content">
             <!-- 搜索区域 -->

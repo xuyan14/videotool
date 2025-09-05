@@ -15,6 +15,100 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentStep = 1;
 const totalSteps = 4;
 
+// 三级品类数据结构
+const categoryData = {
+    clothing: {
+        name: '服装鞋帽',
+        children: {
+            women: {
+                name: '女装',
+                children: {
+                    dress: { name: '连衣裙' },
+                    tops: { name: '上衣' },
+                    pants: { name: '裤装' },
+                    skirts: { name: '半身裙' },
+                    outerwear: { name: '外套' }
+                }
+            },
+            men: {
+                name: '男装',
+                children: {
+                    shirts: { name: '衬衫' },
+                    tshirts: { name: 'T恤' },
+                    pants: { name: '裤装' },
+                    suits: { name: '西装' },
+                    jackets: { name: '夹克' }
+                }
+            },
+            shoes: {
+                name: '鞋类',
+                children: {
+                    sneakers: { name: '运动鞋' },
+                    dress: { name: '正装鞋' },
+                    casual: { name: '休闲鞋' },
+                    boots: { name: '靴子' },
+                    sandals: { name: '凉鞋' }
+                }
+            }
+        }
+    },
+    beauty: {
+        name: '美妆护肤',
+        children: {
+            skincare: {
+                name: '护肤',
+                children: {
+                    cleanser: { name: '洁面' },
+                    moisturizer: { name: '面霜' },
+                    serum: { name: '精华' },
+                    mask: { name: '面膜' },
+                    sunscreen: { name: '防晒' }
+                }
+            },
+            makeup: {
+                name: '彩妆',
+                children: {
+                    foundation: { name: '粉底' },
+                    lipstick: { name: '口红' },
+                    eyeshadow: { name: '眼影' },
+                    mascara: { name: '睫毛膏' },
+                    blush: { name: '腮红' }
+                }
+            }
+        }
+    },
+    digital: {
+        name: '数码家电',
+        children: {
+            phones: {
+                name: '手机通讯',
+                children: {
+                    smartphones: { name: '智能手机' },
+                    accessories: { name: '手机配件' },
+                    cases: { name: '手机壳' },
+                    chargers: { name: '充电器' }
+                }
+            },
+            computers: {
+                name: '电脑办公',
+                children: {
+                    laptops: { name: '笔记本' },
+                    desktops: { name: '台式机' },
+                    tablets: { name: '平板电脑' },
+                    accessories: { name: '电脑配件' }
+                }
+            }
+        }
+    }
+};
+
+// 当前选择的品类状态
+let currentCategorySelection = {
+    level1: null,
+    level2: null,
+    level3: null
+};
+
 // 初始化导航菜单
 function initializeNavigation() {
     const navItems = document.querySelectorAll('.nav-item.has-submenu');
@@ -140,6 +234,14 @@ function initializeScriptMethod() {
             const targetPanel = document.getElementById(method + 'Config');
             if (targetPanel) {
                 targetPanel.classList.add('active');
+                
+                // 如果是AI裂变面板，初始化品类选择器
+                if (method === 'split') {
+                    setTimeout(() => {
+                        console.log('=== AI裂变面板已激活，开始初始化品类选择器 ===');
+                        initCategorySelector();
+                    }, 100);
+                }
             }
         });
     });
@@ -182,11 +284,15 @@ function updateStepDisplay() {
         if (stepNum === currentStep) {
             content.classList.add('active');
             console.log('激活步骤内容:', stepNum);
+            
+            // 如果是步骤3（视频混剪），初始化视频编辑功能
+            if (stepNum === 3) {
+                setTimeout(() => {
+                    initializeVideoEditing();
+                }, 100);
+            }
         }
     });
-    
-
-
 }
 
 // 验证当前步骤
@@ -579,15 +685,11 @@ function generateScript() {
     generateBtn.disabled = true;
     
     setTimeout(() => {
-        // 模拟生成脚本
-        const scriptTemplates = [
-            '大家好，今天给大家推荐一款超美的连衣裙！这款时尚连衣裙2024新款，采用优质面料制作，舒适透气，让你在春夏季节也能美美哒~',
-            '姐妹们看过来！这款连衣裙真的是绝了！时尚设计展现优雅气质，多种颜色可选，百搭款式让你轻松驾驭各种场合~',
-            '今天给大家分享一款超级好穿的连衣裙，面料柔软亲肤，版型显瘦显高，无论是约会还是上班都能轻松驾驭~',
-            '这款连衣裙真的是我的心头爱！荷叶领设计甜美可爱，纯棉面料透气舒适，春夏季节必备单品~',
-            '姐妹们一定要看这款连衣裙！版型显瘦显高，面料柔软亲肤，无论是约会还是上班都能轻松驾驭~',
-            '这款连衣裙真的是太美了！时尚设计展现优雅气质，多种颜色可选，百搭款式让你轻松驾驭各种场合~'
-        ];
+        // 获取当前选择的字数范围
+        const wordCountRange = getSelectedWordCountRange();
+        
+        // 根据字数范围生成不同长度的脚本
+        const scriptTemplates = getScriptTemplatesByWordCount(wordCountRange);
         
         const randomScript = scriptTemplates[Math.floor(Math.random() * scriptTemplates.length)];
         
@@ -1412,14 +1514,49 @@ function confirmVoiceSelection() {
 // 任务抽屉相关函数
 function openTaskDrawer() {
     const drawer = document.getElementById('taskDrawer');
+    const overlay = document.getElementById('taskDrawerOverlay');
+    
     drawer.classList.add('open');
+    drawer.classList.remove('minimized');
+    overlay.classList.add('show');
+    
     // 只在第一次打开时更新任务列表
     updateTaskDrawer();
+    
+    // 添加ESC键监听
+    document.addEventListener('keydown', handleTaskDrawerKeydown);
 }
 
 function closeTaskDrawer() {
     const drawer = document.getElementById('taskDrawer');
-    drawer.classList.remove('open');
+    const overlay = document.getElementById('taskDrawerOverlay');
+    
+    drawer.classList.remove('open', 'minimized');
+    overlay.classList.remove('show');
+    
+    // 移除ESC键监听
+    document.removeEventListener('keydown', handleTaskDrawerKeydown);
+}
+
+function minimizeTaskDrawer() {
+    const drawer = document.getElementById('taskDrawer');
+    const overlay = document.getElementById('taskDrawerOverlay');
+    
+    if (drawer.classList.contains('minimized')) {
+        // 如果已最小化，则恢复
+        drawer.classList.remove('minimized');
+        overlay.classList.add('show');
+    } else {
+        // 最小化
+        drawer.classList.add('minimized');
+        overlay.classList.remove('show');
+    }
+}
+
+function handleTaskDrawerKeydown(event) {
+    if (event.key === 'Escape') {
+        closeTaskDrawer();
+    }
 }
 
 function updateTaskCount() {
@@ -2000,16 +2137,43 @@ function renderVideoLibraryGrid(videos) {
     const grid = document.getElementById('videoLibraryGrid');
     if (!grid) return;
     
-    grid.innerHTML = videos.map(video => `
-        <div class="library-video-item">
-            <div class="library-video-thumbnail" onclick="playVideo(${video.id})">
-                <img src="${video.thumbnail}" alt="视频${video.id}">
-                <div class="play-btn">
-                    <i class="fas fa-play"></i>
-                </div>
-                <div class="checkbox" onclick="toggleVideoSelection(event, ${video.id})"></div>
-                ${video.price ? `<div class="price-tag">${video.price}</div>` : ''}
-            </div>
+          grid.innerHTML = videos.map(video => `
+          <div class="library-video-item">
+             <div class="library-video-thumbnail" 
+                  onclick="playVideo(${video.id})" 
+                  onmouseenter="switchToProcessed(${video.id})"
+                  onmouseleave="switchToOriginal(${video.id})"
+                  data-video-id="${video.id}">
+                 <img class="video-preview-img" src="${video.thumbnail}" alt="视频${video.id}" data-original="${video.thumbnail}" data-processed="${video.thumbnail.replace('.png', '_processed.png').replace('.jpg', '_processed.jpg')}">
+                 <div class="play-btn">
+                     <i class="fas fa-play"></i>
+                 </div>
+                 
+                 <!-- 视频类型指示器 -->
+                 <div class="video-type-indicator">
+                     <div class="indicator-item active" data-type="original">
+                         <i class="fas fa-video"></i>
+                         <span>原片</span>
+                     </div>
+                     <div class="indicator-item" data-type="processed">
+                         <i class="fas fa-magic"></i>
+                         <span>优化</span>
+                     </div>
+                 </div>
+                 
+                 <!-- 处理状态标签 -->
+                 <div class="processing-status" style="display: none;">
+                     <div class="processing-tags">
+                         <span class="tag">降噪</span>
+                         <span class="tag">增强</span>
+                         <span class="tag">调色</span>
+                     </div>
+                 </div>
+                 
+                 <div class="video-duration">15s</div>
+                 <div class="checkbox" onclick="toggleVideoSelection(event, ${video.id})"></div>
+                 ${video.price ? `<div class="price-tag">${video.price}</div>` : ''}
+             </div>
             <div class="library-video-info">
                 <div class="video-id">商品ID: ${video.productId}</div>
                 <div class="video-task-id">任务ID: ${video.taskId}</div>
@@ -2034,11 +2198,143 @@ function renderVideoLibraryGrid(videos) {
     `).join('');
 }
 
+// 切换到预处理视频预览
+function switchToProcessed(videoId) {
+    const thumbnail = document.querySelector(`[data-video-id="${videoId}"]`);
+    if (!thumbnail) return;
+    
+    const img = thumbnail.querySelector('.video-preview-img');
+    const indicators = thumbnail.querySelectorAll('.indicator-item');
+    const processingStatus = thumbnail.querySelector('.processing-status');
+    const duration = thumbnail.querySelector('.video-duration');
+    
+    if (img) {
+        img.src = img.dataset.processed;
+        img.style.filter = 'brightness(1.1) contrast(1.05) saturate(1.1)';
+    }
+    
+    // 更新指示器状态
+    indicators.forEach(indicator => {
+        indicator.classList.remove('active');
+        if (indicator.dataset.type === 'processed') {
+            indicator.classList.add('active');
+        }
+    });
+    
+    // 显示处理状态标签
+    if (processingStatus) {
+        processingStatus.style.display = 'block';
+    }
+    
+    // 更新时长（预处理后通常会略短）
+    if (duration) {
+        duration.textContent = '12s';
+    }
+}
+
+// 切换到原视频预览
+function switchToOriginal(videoId) {
+    const thumbnail = document.querySelector(`[data-video-id="${videoId}"]`);
+    if (!thumbnail) return;
+    
+    const img = thumbnail.querySelector('.video-preview-img');
+    const indicators = thumbnail.querySelectorAll('.indicator-item');
+    const processingStatus = thumbnail.querySelector('.processing-status');
+    const duration = thumbnail.querySelector('.video-duration');
+    
+    if (img) {
+        img.src = img.dataset.original;
+        img.style.filter = 'none';
+    }
+    
+    // 更新指示器状态
+    indicators.forEach(indicator => {
+        indicator.classList.remove('active');
+        if (indicator.dataset.type === 'original') {
+            indicator.classList.add('active');
+        }
+    });
+    
+    // 隐藏处理状态标签
+    if (processingStatus) {
+        processingStatus.style.display = 'none';
+    }
+    
+    // 恢复原始时长
+    if (duration) {
+        duration.textContent = '15s';
+    }
+}
+
 // 播放视频
 function playVideo(videoId) {
-    showMessage(`播放视频 ${videoId}`, 'info');
+    const thumbnail = document.querySelector(`[data-video-id="${videoId}"]`);
+    const activeIndicator = thumbnail?.querySelector('.indicator-item.active');
+    const videoType = activeIndicator?.dataset.type === 'processed' ? '预处理视频' : '原视频';
+    
+    showMessage(`播放${videoType} ${videoId}`, 'info');
     // 这里可以添加视频播放逻辑
 }
+
+// ===== 原料库视频预览菜单功能 =====
+
+// 切换预览菜单显示/隐藏
+function toggleMaterialPreviewMenu(materialId) {
+    // 先关闭所有其他菜单
+    const allMenus = document.querySelectorAll('.material-preview-menu');
+    allMenus.forEach(menu => {
+        if (menu.id !== `materialMenu_${materialId}`) {
+            menu.style.display = 'none';
+        }
+    });
+    
+    // 切换当前菜单
+    const currentMenu = document.getElementById(`materialMenu_${materialId}`);
+    if (currentMenu) {
+        currentMenu.style.display = currentMenu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// 预览素材视频
+function previewMaterialVideo(materialId, type) {
+    const thumbnail = document.querySelector(`[data-material-id="${materialId}"]`);
+    if (!thumbnail) return;
+    
+    const img = thumbnail.querySelector('.material-preview-img');
+    const menu = document.getElementById(`materialMenu_${materialId}`);
+    
+    if (img) {
+        // 更新图片源和样式
+        if (type === 'processed') {
+            img.src = img.dataset.processed;
+            img.style.filter = 'brightness(1.1) contrast(1.05) saturate(1.1)';
+            img.dataset.currentType = 'processed';
+        } else {
+            img.src = img.dataset.original;
+            img.style.filter = 'none';
+            img.dataset.currentType = 'original';
+        }
+    }
+    
+    // 隐藏菜单
+    if (menu) {
+        menu.style.display = 'none';
+    }
+    
+    // 显示预览消息
+    const typeText = type === 'processed' ? '预处理视频' : '原片视频';
+    showMessage(`正在预览${typeText} - 素材ID: ${materialId}`, 'info');
+}
+
+// 点击外部关闭菜单
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.preview-button-container')) {
+        const allMenus = document.querySelectorAll('.material-preview-menu');
+        allMenus.forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
 
 // 切换视频状态
 function toggleVideoStatus(videoId, isChecked) {
@@ -2281,8 +2577,14 @@ function renderMaterialTable(materials) {
     tbody.innerHTML = displayMaterials.map(material => `
         <tr>
             <td>
-                <img src="${material.thumbnail}" alt="视频封面" class="video-thumbnail" 
-                     onclick="previewVideo('${material.videoUrl}', '${material.materialName}', '${material.productName}')">
+                <div class="material-video-thumbnail" data-material-id="${material.id}">
+                    <img class="material-preview-img" 
+                         src="${material.thumbnail}" 
+                         alt="视频封面" 
+                         data-original="${material.thumbnail}" 
+                         data-processed="${material.thumbnail.replace('.png', '_processed.png').replace('.jpg', '_processed.jpg')}"
+                         data-current-type="original">
+                </div>
             </td>
             <td>${material.id}</td>
             <td>${material.brandName}</td>
@@ -2299,9 +2601,22 @@ function renderMaterialTable(materials) {
                     <button class="btn btn-sm btn-outline" onclick="editMaterial('${material.id}')" title="编辑">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline" onclick="viewMaterial('${material.id}')" title="查看">
-                        <i class="fas fa-eye"></i>
-                    </button>
+                    <div class="preview-button-container">
+                        <button class="btn btn-sm btn-outline" onclick="toggleMaterialPreviewMenu('${material.id}')" title="预览">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <!-- 预览选项菜单 -->
+                        <div class="material-preview-menu" id="materialMenu_${material.id}" style="display: none;">
+                            <div class="preview-option" onclick="previewMaterialVideo('${material.id}', 'original')">
+                                <i class="fas fa-video"></i>
+                                <span>原片</span>
+                            </div>
+                            <div class="preview-option" onclick="previewMaterialVideo('${material.id}', 'processed')">
+                                <i class="fas fa-magic"></i>
+                                <span>预处理</span>
+                            </div>
+                        </div>
+                    </div>
                     <button class="btn btn-sm btn-outline" onclick="deleteMaterial('${material.id}')" title="删除">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -3215,6 +3530,9 @@ function goToScriptGeneration() {
             step1Actions.style.display = 'none';
         }
         
+        // 更新商品信息展示
+        updateProductInfoDisplay();
+        
         showMessage('已跳转到脚本生成页面', 'success');
     }
 }
@@ -3297,3 +3615,586 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化侧边栏
     initializeSidebar();
 });
+
+// ===== 品类选择器相关函数 =====
+
+// 初始化品类选择器
+function initCategorySelector() {
+    try {
+        console.log('开始初始化品类选择器...');
+        
+        // 检查AI裂变面板是否可见
+        const splitConfig = document.getElementById('splitConfig');
+        console.log('splitConfig面板:', splitConfig);
+        console.log('splitConfig是否可见:', splitConfig && splitConfig.classList.contains('active'));
+        
+        if (!splitConfig || !splitConfig.classList.contains('active')) {
+            console.warn('AI裂变面板未激活，跳过初始化');
+            return;
+        }
+        
+        // 设置默认选择状态
+        currentCategorySelection = {
+            level1: { key: 'clothing', name: '服装鞋帽' },
+            level2: { key: 'women', name: '女装' },
+            level3: { key: 'tops', name: '上衣' }
+        };
+        console.log('已设置默认品类选择:', currentCategorySelection);
+        
+        // 生成所有级别的选项
+        generateCategoryOptions();
+        
+        // 绑定事件处理器
+        bindCategoryEventHandlers();
+        
+        console.log('品类选择器初始化完成');
+    } catch (error) {
+        console.error('初始化品类选择器时出错:', error);
+    }
+}
+
+// 生成所有级别的品类选项
+function generateCategoryOptions() {
+    // 生成一级品类选项
+    const level1Options = document.getElementById('level1Options');
+    if (level1Options) {
+        level1Options.innerHTML = '';
+        Object.keys(categoryData).forEach(key => {
+            const category = categoryData[key];
+            const option = document.createElement('div');
+            option.className = 'category-option';
+            option.dataset.value = key;
+            option.innerHTML = `
+                <span class="category-option-name">${category.name}</span>
+                <span class="category-option-count">${Object.keys(category.children).length}个子类</span>
+            `;
+            option.onclick = () => selectLevel1Category(key, category.name);
+            level1Options.appendChild(option);
+        });
+        console.log('已生成一级品类选项');
+    }
+    
+    // 生成二级品类选项（基于默认选择的一级品类）
+    generateLevel2Options(currentCategorySelection.level1.key);
+    
+    // 生成三级品类选项（基于默认选择的一级和二级品类）
+    generateLevel3Options(currentCategorySelection.level1.key, currentCategorySelection.level2.key);
+}
+
+// 绑定品类事件处理器
+function bindCategoryEventHandlers() {
+    const level1Header = document.querySelector('#level1 .category-header');
+    if (level1Header) {
+        level1Header.onclick = null;
+        level1Header.addEventListener('click', function(e) {
+            console.log('点击一级品类头部');
+            e.preventDefault();
+            e.stopPropagation();
+            toggleCategoryLevel('level1');
+        });
+    }
+    
+    const level2Header = document.querySelector('#level2 .category-header');
+    if (level2Header) {
+        level2Header.onclick = null;
+        level2Header.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleCategoryLevel('level2');
+        });
+    }
+    
+    const level3Header = document.querySelector('#level3 .category-header');
+    if (level3Header) {
+        level3Header.onclick = null;
+        level3Header.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleCategoryLevel('level3');
+        });
+    }
+    
+    console.log('已绑定所有品类事件处理器');
+}
+
+// 切换品类级别显示/隐藏
+function toggleCategoryLevel(level) {
+    console.log('=== toggleCategoryLevel 被调用 ===');
+    console.log('切换品类层级:', level);
+    
+    const levelElement = document.getElementById(level);
+    console.log('找到levelElement:', levelElement);
+    
+    if (!levelElement) {
+        console.error('未找到品类层级元素:', level);
+        alert('未找到品类层级元素: ' + level);
+        return;
+    }
+    
+    const optionsElement = document.getElementById(level + 'Options');
+    console.log('找到optionsElement:', optionsElement);
+    
+    if (!optionsElement) {
+        console.error('未找到选项容器:', level + 'Options');
+        alert('未找到选项容器: ' + level + 'Options');
+        return;
+    }
+    
+    const expandIcon = levelElement.querySelector('.expand-icon');
+    console.log('找到expandIcon:', expandIcon);
+    
+    // 切换显示状态
+    const isCurrentlyVisible = optionsElement.style.display === 'block';
+    console.log('当前是否可见:', isCurrentlyVisible);
+    
+    if (isCurrentlyVisible) {
+        optionsElement.style.display = 'none';
+        if (expandIcon) {
+            expandIcon.style.transform = 'rotate(0deg)';
+        }
+        console.log('已隐藏选项');
+    } else {
+        optionsElement.style.display = 'block';
+        if (expandIcon) {
+            expandIcon.style.transform = 'rotate(180deg)';
+        }
+        console.log('已显示选项，内容:', optionsElement.innerHTML);
+        
+        // 如果是重新选择上级品类，需要重置下级选择
+        if (level === 'level1' && currentCategorySelection.level1) {
+            // 重新选择一级品类时，清空二级和三级选择
+            currentCategorySelection.level2 = null;
+            currentCategorySelection.level3 = null;
+            updateCategoryHeader('level2', '请选择二级品类');
+            updateCategoryHeader('level3', '请选择三级品类');
+            hideCategoryLevel('level2');
+            hideCategoryLevel('level3');
+        } else if (level === 'level2' && currentCategorySelection.level2) {
+            // 重新选择二级品类时，清空三级选择
+            currentCategorySelection.level3 = null;
+            updateCategoryHeader('level3', '请选择三级品类');
+            hideCategoryLevel('level3');
+        }
+        
+        // 更新选择路径显示
+        showSelectedCategory();
+    }
+}
+
+// 选择一级品类
+function selectLevel1Category(key, name) {
+    console.log('选择一级品类:', key, name);
+    
+    currentCategorySelection.level1 = { key, name };
+    currentCategorySelection.level2 = null; // 重置二级品类选择
+    currentCategorySelection.level3 = null; // 重置三级品类选择
+    
+    updateCategoryHeader('level1', name);
+    hideCategoryLevel('level1');
+    
+    // 重置二级和三级品类头部显示
+    updateCategoryHeader('level2', '请选择二级品类');
+    updateCategoryHeader('level3', '请选择三级品类');
+    
+    // 生成二级品类选项
+    generateLevel2Options(key);
+    showCategoryLevel('level2');
+    
+    // 隐藏三级品类
+    hideCategoryLevel('level3');
+    
+    showSelectedCategory();
+}
+
+// 选择二级品类
+function selectLevel2Category(key, name) {
+    console.log('选择二级品类:', key, name);
+    
+    currentCategorySelection.level2 = { key, name };
+    currentCategorySelection.level3 = null; // 重置三级品类选择
+    
+    updateCategoryHeader('level2', name);
+    hideCategoryLevel('level2');
+    
+    // 重置三级品类头部显示
+    updateCategoryHeader('level3', '请选择三级品类');
+    
+    // 生成三级品类选项
+    generateLevel3Options(currentCategorySelection.level1.key, key);
+    showCategoryLevel('level3');
+    
+    showSelectedCategory();
+}
+
+// 选择三级品类
+function selectLevel3Category(key, name) {
+    console.log('选择三级品类:', key, name);
+    
+    currentCategorySelection.level3 = { key, name };
+    
+    updateCategoryHeader('level3', name);
+    hideCategoryLevel('level3');
+    
+    showSelectedCategory();
+}
+
+// 生成二级品类选项
+function generateLevel2Options(level1Key) {
+    const level2Options = document.getElementById('level2Options');
+    if (!level2Options) return;
+    
+    level2Options.innerHTML = '';
+    const level1Data = categoryData[level1Key];
+    
+    if (level1Data && level1Data.children) {
+        Object.keys(level1Data.children).forEach(key => {
+            const category = level1Data.children[key];
+            const option = document.createElement('div');
+            option.className = 'category-option';
+            option.dataset.value = key;
+            option.innerHTML = `
+                <span class="category-option-name">${category.name}</span>
+                <span class="category-option-count">${category.children ? Object.keys(category.children).length : 0}个子类</span>
+            `;
+            option.onclick = () => selectLevel2Category(key, category.name);
+            level2Options.appendChild(option);
+        });
+    }
+}
+
+// 生成三级品类选项
+function generateLevel3Options(level1Key, level2Key) {
+    const level3Options = document.getElementById('level3Options');
+    if (!level3Options) return;
+    
+    level3Options.innerHTML = '';
+    const level2Data = categoryData[level1Key]?.children?.[level2Key];
+    
+    if (level2Data && level2Data.children) {
+        Object.keys(level2Data.children).forEach(key => {
+            const category = level2Data.children[key];
+            const option = document.createElement('div');
+            option.className = 'category-option';
+            option.dataset.value = key;
+            option.innerHTML = `
+                <span class="category-option-name">${category.name}</span>
+            `;
+            option.onclick = () => selectLevel3Category(key, category.name);
+            level3Options.appendChild(option);
+        });
+    }
+}
+
+// 更新品类头部显示
+function updateCategoryHeader(level, selectedName) {
+    const header = document.querySelector(`#${level} .category-placeholder`);
+    if (header) {
+        header.textContent = selectedName;
+        header.style.color = '#333';
+    }
+}
+
+// 显示品类级别
+function showCategoryLevel(level) {
+    const levelElement = document.getElementById(level);
+    if (levelElement) {
+        levelElement.style.display = 'block';
+    }
+}
+
+// 隐藏品类级别
+function hideCategoryLevel(level) {
+    const levelElement = document.getElementById(level);
+    const optionsElement = document.getElementById(level + 'Options');
+    const expandIcon = levelElement?.querySelector('.expand-icon');
+    
+    if (optionsElement) {
+        optionsElement.style.display = 'none';
+    }
+    if (expandIcon) {
+        expandIcon.style.transform = 'rotate(0deg)';
+    }
+}
+
+// 显示已选择的品类路径
+function showSelectedCategory() {
+    const selectedCategory = document.getElementById('selectedCategory');
+    const selectedPath = document.getElementById('selectedPath');
+    
+    if (selectedCategory && selectedPath) {
+        let path = '';
+        if (currentCategorySelection.level1) {
+            path += currentCategorySelection.level1.name;
+            if (currentCategorySelection.level2) {
+                path += ' > ' + currentCategorySelection.level2.name;
+                if (currentCategorySelection.level3) {
+                    path += ' > ' + currentCategorySelection.level3.name;
+                }
+            }
+        }
+        
+        selectedPath.textContent = path;
+        selectedCategory.style.display = path ? 'flex' : 'none';
+    }
+}
+
+// 隐藏已选择的品类路径
+function hideSelectedCategory() {
+    const selectedCategory = document.getElementById('selectedCategory');
+    if (selectedCategory) {
+        selectedCategory.style.display = 'none';
+    }
+}
+
+// 清空品类选择
+function clearCategorySelection() {
+    currentCategorySelection = {
+        level1: null,
+        level2: null,
+        level3: null
+    };
+    
+    // 重置所有头部显示
+    updateCategoryHeader('level1', '请选择一级品类');
+    updateCategoryHeader('level2', '请选择二级品类');
+    updateCategoryHeader('level3', '请选择三级品类');
+    
+    // 隐藏所有级别
+    hideCategoryLevel('level2');
+    hideCategoryLevel('level3');
+    
+    // 隐藏已选择显示
+    hideSelectedCategory();
+    
+    // 重新显示一级品类
+    showCategoryLevel('level1');
+}
+
+// 获取当前选择的品类路径（用于推荐系统）
+function getCurrentCategoryPath() {
+    if (currentCategorySelection.level3) {
+        return `${currentCategorySelection.level1.key}.${currentCategorySelection.level2.key}.${currentCategorySelection.level3.key}`;
+    } else if (currentCategorySelection.level2) {
+        return `${currentCategorySelection.level1.key}.${currentCategorySelection.level2.key}`;
+    } else if (currentCategorySelection.level1) {
+        return currentCategorySelection.level1.key;
+    }
+    return '';
+}
+
+// 更新商品信息展示
+function updateProductInfoDisplay() {
+    const confirmedProductTitle = document.getElementById('confirmedProductTitle');
+    const confirmedSellingPoints = document.getElementById('confirmedSellingPoints');
+    
+    // Mock 默认数据
+    const mockProductInfo = {
+        title: '儿童纯棉百搭小清新碎花上衣',
+        sellingPoints: ['亲肤柔软', '透气不闷热', '荷叶领口', '纯棉面料']
+    };
+    
+    // 更新商品标题
+    if (confirmedProductTitle) {
+        confirmedProductTitle.textContent = mockProductInfo.title;
+    }
+    
+    // 更新商品卖点
+    if (confirmedSellingPoints) {
+        confirmedSellingPoints.innerHTML = '';
+        mockProductInfo.sellingPoints.forEach(point => {
+            const tag = document.createElement('span');
+            tag.className = 'selling-point-tag';
+            tag.textContent = point;
+            confirmedSellingPoints.appendChild(tag);
+        });
+    }
+}
+
+// 获取确认的商品信息
+function getConfirmedProductInfo() {
+    // 从第一步中获取选中的爆款方案信息
+    const selectedScheme = getSelectedScheme();
+    
+    if (selectedScheme) {
+        return {
+            title: selectedScheme.title,
+            sellingPoints: selectedScheme.sellingPoints
+        };
+    }
+    
+    return null;
+}
+
+// 获取选中的爆款方案
+function getSelectedScheme() {
+    // 查找选中的商品简称标签
+    const selectedNameTags = document.querySelectorAll('.name-tag.selected');
+    // 查找选中的卖点标签
+    const selectedPointTags = document.querySelectorAll('.point-tag.selected');
+    
+    if (selectedNameTags.length > 0) {
+        const title = selectedNameTags[0].textContent.trim();
+        const sellingPoints = Array.from(selectedPointTags).map(tag => tag.textContent.trim());
+        
+        return {
+            title: title,
+            sellingPoints: sellingPoints
+        };
+    }
+    
+    return null;
+}
+
+// 更新字数范围显示（当前主要用于记录选择状态）
+function updateWordCountDisplay() {
+    const wordCountRange = document.getElementById('wordCountRange');
+    if (wordCountRange) {
+        const selectedValue = wordCountRange.value;
+        console.log('选择的字数范围:', selectedValue);
+        
+        // 可以在这里添加其他逻辑，比如根据字数范围筛选脚本等
+        // 目前主要用于记录用户的选择
+        window.selectedWordCountRange = selectedValue;
+    }
+}
+
+// 获取当前选择的字数范围
+function getSelectedWordCountRange() {
+    const wordCountRange = document.getElementById('wordCountRange');
+    return wordCountRange ? wordCountRange.value : '50-75';
+}
+
+// ===== 视频编辑页面相关函数 =====
+
+// 选择镜头
+function selectShot(segmentNumber) {
+    console.log('选择镜头:', segmentNumber);
+    
+    // 移除所有镜头的选中状态
+    const allShots = document.querySelectorAll('.shot-item');
+    allShots.forEach(shot => shot.classList.remove('selected'));
+    
+    // 移除所有脚本句子的高亮状态
+    const allSentences = document.querySelectorAll('.script-sentence');
+    allSentences.forEach(sentence => sentence.classList.remove('highlighted'));
+    
+    // 选中当前镜头
+    const selectedShot = document.querySelector(`.shot-item[data-segment="${segmentNumber}"]`);
+    if (selectedShot) {
+        selectedShot.classList.add('selected');
+    }
+    
+    // 高亮对应的脚本句子
+    const correspondingSentence = document.querySelector(`.script-sentence[data-segment="${segmentNumber}"]`);
+    if (correspondingSentence) {
+        correspondingSentence.classList.add('highlighted');
+        
+        // 滚动到对应的脚本句子
+        correspondingSentence.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+    
+    // 显示选择反馈
+    showMessage(`已选择镜头${segmentNumber}`, 'info');
+}
+
+// 选择脚本句子（反向选择镜头）
+function selectScriptSentence(segmentNumber) {
+    console.log('选择脚本句子:', segmentNumber);
+    
+    // 移除所有状态
+    const allShots = document.querySelectorAll('.shot-item');
+    const allSentences = document.querySelectorAll('.script-sentence');
+    
+    allShots.forEach(shot => shot.classList.remove('selected'));
+    allSentences.forEach(sentence => sentence.classList.remove('highlighted'));
+    
+    // 选中对应的镜头和句子
+    const selectedShot = document.querySelector(`.shot-item[data-segment="${segmentNumber}"]`);
+    const selectedSentence = document.querySelector(`.script-sentence[data-segment="${segmentNumber}"]`);
+    
+    if (selectedShot) {
+        selectedShot.classList.add('selected');
+        
+        // 滚动到对应的镜头
+        selectedShot.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+    
+    if (selectedSentence) {
+        selectedSentence.classList.add('highlighted');
+    }
+}
+
+// 初始化视频编辑页面
+function initializeVideoEditing() {
+    // 为脚本句子添加点击事件
+    const scriptSentences = document.querySelectorAll('.script-sentence');
+    scriptSentences.forEach(sentence => {
+        sentence.addEventListener('click', function() {
+            const segmentNumber = this.dataset.segment;
+            selectScriptSentence(parseInt(segmentNumber));
+        });
+    });
+    
+    console.log('视频编辑页面初始化完成');
+}
+
+// 预览视频
+function previewVideo() {
+    showMessage('正在生成视频预览...', 'info');
+    
+    setTimeout(() => {
+        showMessage('视频预览已准备就绪！', 'success');
+        // 这里可以添加实际的预览逻辑
+    }, 2000);
+}
+
+// 编辑镜头
+function editShots() {
+    showMessage('镜头编辑功能开发中...', 'info');
+    // 这里可以添加镜头编辑的逻辑
+}
+
+// 生成视频
+function generateVideo() {
+    showMessage('正在生成最终视频...', 'info');
+    
+    setTimeout(() => {
+        showMessage('视频生成完成！', 'success');
+        // 跳转到下载页面
+        currentStep = 4;
+        updateStepDisplay();
+    }, 3000);
+}
+
+// 根据字数范围获取脚本模板
+function getScriptTemplatesByWordCount(wordCountRange) {
+    const templates = {
+        '50-75': [
+            '大家好，今天给大家推荐一款超美的连衣裙！这款时尚连衣裙2024新款，采用优质面料制作，舒适透气，让你在春夏季节也能美美哒~',
+            '姐妹们看过来！这款连衣裙真的是绝了！时尚设计展现优雅气质，多种颜色可选，百搭款式让你轻松驾驭各种场合~',
+            '今天给大家分享一款超级好穿的连衣裙，面料柔软亲肤，版型显瘦显高，无论是约会还是上班都能轻松驾驭~'
+        ],
+        '75-150': [
+            '大家好，今天给大家推荐一款超美的儿童连衣裙！这款小清新碎花上衣采用100%纯棉面料制作，亲肤柔软透气不闷热，特别适合活泼好动的小朋友。荷叶领口设计甜美可爱，碎花图案时尚百搭，无论是日常穿搭还是聚会场合都能轻松驾驭。妈妈们快来给宝贝选购吧！',
+            '姐妹们看过来！这款儿童连衣裙真的是绝了！采用优质纯棉面料，手感柔软舒适，透气性超好，宝宝穿着不会闷热。荷叶领口设计增添甜美气息，小碎花图案清新可爱，版型宽松舒适不束缚，让孩子自由活动。这样的好衣服，妈妈们一定不要错过哦！',
+            '今天给大家分享一款超级好穿的儿童上衣，面料选用优质纯棉，亲肤柔软透气，宝宝穿着舒适不过敏。荷叶领口设计时尚甜美，碎花图案清新自然，无论搭配裤子还是裙子都很好看。这款上衣质量超棒，性价比很高，强烈推荐给各位妈妈！'
+        ],
+        '150-300': [
+            '大家好，今天给大家推荐一款超美的儿童纯棉碎花上衣！作为一个有着多年育儿经验的妈妈，我深知给孩子选择衣服的重要性。这款上衣采用100%优质纯棉面料制作，经过精心挑选的棉花纤维，手感柔软细腻，透气性极佳，即使在炎热的夏天，宝宝穿着也不会感到闷热不适。荷叶领口的设计非常贴心，不仅增添了甜美可爱的气息，还能很好地修饰宝宝的脸型。小碎花图案清新自然，颜色搭配和谐，无论是搭配牛仔裤还是小裙子都非常好看。版型设计宽松舒适，不会束缚孩子的活动，让他们可以自由奔跑玩耍。这款上衣质量过硬，做工精细，性价比超高，真的是妈妈们的不二选择！',
+            '姐妹们，今天必须给大家安利这款儿童纯棉上衣！我家宝宝已经穿了好几个月了，真的是越穿越喜欢。首先说说面料，这款上衣采用的是高品质纯棉材质，我特意摸过很多品牌的童装，这个手感真的是数一数二的。棉质柔软亲肤，透气性超好，我家孩子皮肤比较敏感，穿这个完全没有过敏反应。荷叶领口的设计真的太可爱了，显得宝宝特别精神，而且这个领口不会勒脖子，孩子穿着很舒服。碎花图案的选择也很用心，不会过于花哨，但又不失童趣，搭配性很强。我给孩子配过很多下装，都很好看。最重要的是，这个价格真的很实惠，质量这么好的衣服，价格却很亲民，性价比绝对没话说！',
+            '各位宝妈们，今天要给大家推荐一款我觉得特别值得入手的儿童上衣！这款纯棉碎花上衣从面料到设计都让我非常满意。面料方面，选用的是优质纯棉，我专门查过这个品牌的面料来源，都是经过严格筛选的天然棉花，无添加化学物质，对孩子的皮肤非常友好。透气性也很好，我家孩子比较活泼，经常跑来跑去，穿这个上衣从来不会出现闷热的情况。设计方面，荷叶领口真的很有特色，既优雅又可爱，而且这个领口的处理很细致，边缘都做了特殊处理，不会刮到孩子的皮肤。碎花图案的配色也很考究，既有童真的感觉，又不会显得过于幼稚，随着孩子长大也不会过时。版型设计考虑到了孩子的成长需要，宽松但不臃肿，既舒适又美观。'
+        ],
+        '300+': [
+            '大家好，今天我要给各位宝妈们详细介绍一款真正值得信赖的儿童纯棉上衣！作为一个有着十年育儿经验的妈妈，我对童装的要求可以说是非常严格的。这款儿童纯棉百搭小清新碎花上衣，从我第一眼看到就被它的品质所吸引。首先，让我们来谈谈面料。这款上衣采用的是100%优质长绒棉，这种棉花的纤维更长更细腻，制作出来的面料不仅手感柔软如丝，而且透气性能极佳。我特意做过对比测试，将这件衣服和其他品牌的童装放在一起，无论是柔软度还是透气性，这款都明显胜出。更重要的是，这种纯棉面料经过了严格的安全检测，不含任何有害化学物质，完全符合婴幼儿纺织品安全标准，即使是最敏感的宝宝皮肤也能安心穿着。再来说说设计细节。荷叶领口的设计真的是这款上衣的点睛之笔，不仅增添了甜美可爱的气息，还能很好地修饰宝宝的脸型，让孩子看起来更加精神可爱。这个领口的制作工艺也很考究，采用了特殊的滚边技术，确保边缘平整不起毛，不会刮伤孩子娇嫩的皮肤。碎花图案的选择更是经过了精心设计，颜色搭配和谐自然，既有童真的味道，又不失时尚感，无论搭配什么下装都能展现出不同的风格。版型设计方面，这款上衣充分考虑了儿童的生长发育特点，采用宽松舒适的剪裁，既不会束缚孩子的活动，又能很好地展现出孩子的可爱身形。袖口和下摆的处理也很到位，松紧适中，既保证了穿着的舒适度，又能有效防止变形。在做工方面，每一个细节都体现出了匠心品质，走线平整，缝合牢固，经得起孩子日常的活动和多次洗涤。最后说说性价比，这样高品质的童装，价格却非常亲民，真的是每个家庭都能承受的范围。我真心推荐给每一位关爱孩子的妈妈，相信你们的宝贝穿上这款上衣，一定会更加可爱迷人！',
+            '各位宝妈们，今天我要跟大家分享一个真正的好物发现！这款儿童纯棉碎花上衣绝对是我今年买过最满意的童装之一。作为一个对孩子穿着要求极高的妈妈，我在选择童装时总是格外谨慎，不仅要考虑美观，更要注重安全和舒适。这款上衣在各个方面都让我非常满意，今天就来详细给大家介绍一下。首先是面料品质，这款上衣使用的是精选优质纯棉，我专门了解过这个品牌的供应链，他们的棉花都来自于世界知名的优质产区，经过严格的筛选和处理。这种纯棉面料的特点是纤维长度适中，柔软度极高，同时具有优异的吸湿透气性能。我做过实际测试，在同样的环境下，孩子穿这件衣服比穿其他品牌的衣服明显感觉更加干爽舒适。而且这种面料经过了多重安全检测，完全符合国际婴幼儿纺织品安全标准，不含甲醛、重金属等有害物质，家长们可以完全放心。设计方面，荷叶领口的创意真的让人眼前一亮。这个设计不仅仅是为了美观，更多的是考虑到了实用性。荷叶边的设计能够很好地修饰孩子的脸型，让宝宝看起来更加精神可爱。同时，这个领口的开合设计也很人性化，既方便穿脱，又不会过于宽松导致走光。碎花图案的选择更是体现了设计师的用心，采用了清新自然的色彩搭配，既符合儿童活泼可爱的天性，又不会过于花哨显得俗气。这种图案的搭配性很强，无论是配牛仔裤、休闲裤还是小裙子都能展现出不同的风格。在版型设计上，这款上衣充分考虑了儿童的身体特点和活动需求。采用了适度宽松的剪裁，既保证了穿着的舒适度，又不会显得过于臃肿。袖子的长度设计得恰到好处，既能保护孩子的手臂，又不会影响日常活动。下摆的设计也很贴心，长度适中，既能很好地搭配各种下装，又能保证孩子在活动时不会走光。做工品质方面，这款上衣的每一个细节都体现出了精工细作的品质。所有的缝线都非常平整牢固，经得起孩子日常的各种活动。特别是容易磨损的部位，如领口、袖口等地方，都做了特殊的加固处理，大大延长了衣服的使用寿命。最让我满意的是这款上衣的性价比，如此高品质的童装，价格却非常合理，真正做到了物超所值。我已经为我家宝宝购买了多件不同颜色的，准备作为日常的主要搭配。强烈推荐给所有注重品质的宝妈们！'
+        ]
+    };
+    
+    return templates[wordCountRange] || templates['50-75'];
+}
