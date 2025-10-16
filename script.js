@@ -9,11 +9,46 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCustomInputs();
     initializeTaskManagement();
     initializeScriptList();
+    initializeAIModel();
 });
 
 // 当前步骤
 let currentStep = 1;
 const totalSteps = 4;
+
+// 视频替换相关变量
+var currentReplaceSegmentIndex = -1;
+var newVideoFile = null;
+var selectedMaterial = null;
+var currentMaterialPage = 1;
+var materialPageSize = 10;
+var materialSearchKeyword = '';
+
+// 模拟素材库数据
+var materialLibraryData = [
+    { id: 1, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '3MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 2, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '5MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 3, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '4MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 4, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '3MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 5, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '5MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 6, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '4MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 7, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '3MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 8, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '5MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 9, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '4MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' },
+    { id: 10, name: '商品名称', title: '【100%纯棉】儿童碎花上衣', duration: '4秒', size: '3MB', thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg' }
+];
+
+// 生成更多模拟数据
+for (let i = 11; i <= 45; i++) {
+    materialLibraryData.push({
+        id: i,
+        name: '商品名称',
+        title: '【100%纯棉】儿童碎花上衣',
+        duration: '4秒',
+        size: Math.floor(Math.random() * 3 + 3) + 'MB',
+        thumbnail: 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/202509191847396373.jpg'
+    });
+}
 
 // 三级品类数据结构
 const categoryData = {
@@ -245,6 +280,34 @@ function initializeScriptMethod() {
             }
         });
     });
+    
+    // 初始化AI模型选择
+    initializeAIModelSelection();
+}
+
+// 初始化AI模型选择
+function initializeAIModelSelection() {
+    // 设置默认模型为O1
+    window.currentAIModel = 'O1';
+}
+
+// 切换模型
+function toggleModel() {
+    const selectedModel = document.querySelector('input[name="aiModel"]:checked');
+    if (selectedModel) {
+        window.currentAIModel = selectedModel.value;
+        console.log('AI模型已切换为:', window.currentAIModel);
+    }
+}
+
+// 初始化AI模型选择
+function initializeAIModel() {
+    const modelRadios = document.querySelectorAll('input[name="aiModel"]');
+    modelRadios.forEach(radio => {
+        radio.addEventListener('change', toggleModel);
+    });
+    // 设置默认值
+    window.currentAIModel = 'deepseekr1';
 }
 
 // 初始化自定义输入监听
@@ -253,6 +316,13 @@ function initializeCustomInputs() {
 }
 
 
+
+// 跳转到指定步骤
+function showStep(stepNumber) {
+    currentStep = stepNumber;
+    updateStepDisplay();
+    console.log('跳转到步骤:', stepNumber);
+}
 
 // 更新步骤显示
 function updateStepDisplay() {
@@ -374,6 +444,74 @@ function validateVideoMixing() {
     return true;
 }
 
+// 模拟原料库数据查询
+function checkMaterialLibrary(productId) {
+    // 模拟不同商品ID的原料库状态
+    const mockMaterialData = {
+        '6921298477540574538': {
+            videoCount: 15,
+            status: 'available',
+            lastUpload: '2024-01-15',
+            productId: '6921298477540574538'
+        },
+        '6921298477540574539': {
+            videoCount: 3,
+            status: 'limited',
+            lastUpload: '2024-01-10',
+            productId: '6921298477540574539'
+        },
+        '6921298477540574540': {
+            videoCount: 0,
+            status: 'unavailable',
+            lastUpload: null,
+            productId: '6921298477540574540'
+        },
+        '6921298477540574541': {
+            videoCount: 8,
+            status: 'available',
+            lastUpload: '2024-01-12',
+            productId: '6921298477540574541'
+        },
+        '6921298477540574542': {
+            videoCount: 1,
+            status: 'limited',
+            lastUpload: '2024-01-08',
+            productId: '6921298477540574542'
+        }
+    };
+    
+    // 如果没有匹配的商品ID，返回默认数据
+    return mockMaterialData[productId] || {
+        videoCount: Math.floor(Math.random() * 20),
+        status: Math.random() > 0.5 ? 'available' : (Math.random() > 0.5 ? 'limited' : 'unavailable'),
+        lastUpload: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        productId: productId
+    };
+}
+
+// 更新原料库状态提示
+function updateMaterialHint(materialData) {
+    const materialHint = document.getElementById('materialHint');
+    const materialHintText = document.getElementById('materialHintText');
+    const materialHintLink = document.getElementById('materialHintLink');
+    
+    if (materialHint && materialHintText && materialHintLink) {
+        if (materialData.videoCount > 0) {
+            // 有素材的情况
+            materialHintText.textContent = `原料库中有 ${materialData.videoCount} 个相关视频`;
+            materialHintText.className = 'hint-text';
+            materialHintLink.style.display = 'none';
+        } else {
+            // 无素材的情况
+            materialHintText.textContent = '原料库中暂无相关视频';
+            materialHintText.className = 'hint-text no-material';
+            materialHintLink.style.display = 'inline';
+        }
+        
+        materialHint.style.display = 'flex';
+    }
+}
+
 // 识别商品
 function identifyProduct() {
     const productId = document.getElementById('productId').value;
@@ -420,6 +558,10 @@ function identifyProduct() {
             aiProductInfo.style.display = 'block';
         }
         
+        // 检查原料库状态
+        const materialData = checkMaterialLibrary(productId);
+        updateMaterialHint(materialData);
+        
         // 显示爆款方案
         const hotSchemes = document.getElementById('hotSchemes');
         if (hotSchemes) {
@@ -441,6 +583,22 @@ function identifyProduct() {
         // 不再自动进入下一步，让用户手动选择
         console.log('商品识别完成，等待用户选择卖点');
     }, 2000);
+}
+
+// 查看原料库
+function viewMaterialLibrary() {
+    console.log('跳转到原料库页面...');
+    // 切换到原料库页面
+    showPage('materialLibrary');
+    showMessage('已跳转到原料库页面', 'info');
+}
+
+// 上传新素材
+function uploadNewMaterial() {
+    console.log('打开素材上传弹窗...');
+    // 打开上传弹窗
+    openUploadModal();
+    showMessage('已打开素材上传页面', 'info');
 }
 
 // 加载素材
@@ -510,7 +668,7 @@ function createUploadItem(item, index) {
     uploadItem.className = 'upload-item';
     uploadItem.innerHTML = `
         <div class="upload-item-thumbnail">
-            <img src="https://via.placeholder.com/40x40/90EE90/000000?text=视频" alt="视频">
+            <img src="https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png" alt="视频">
         </div>
         <div class="upload-item-info">
             <div class="upload-item-name">${item.name}</div>
@@ -696,12 +854,15 @@ function generateScript() {
         // 获取当前脚本数量，用于编号
         const currentScriptCount = scriptList.children.length + 1;
         
+        // 获取当前选择的AI模型
+        const currentModel = window.currentAIModel || 'O1';
+        
         // 创建新的脚本项目
         const scriptItem = document.createElement('div');
         scriptItem.className = 'script-item';
         scriptItem.innerHTML = `
             <div class="script-header">
-                <h5>脚本${currentScriptCount}</h5>
+                <h5>脚本${currentScriptCount}<span class="script-model-tag ${currentModel.toLowerCase()}">${currentModel}</span></h5>
             </div>
             <div class="script-content">
                 <p>${randomScript}</p>
@@ -1017,11 +1178,11 @@ function createTasksWithDefaultVoice() {
 function generateVideoThumbnail(scriptContent) {
     // 根据脚本内容生成不同的缩略图
     const thumbnails = [
-        'https://via.placeholder.com/200x150/90EE90/000000?text=视频封面1',
-        'https://via.placeholder.com/200x150/87CEEB/000000?text=视频封面2',
-        'https://via.placeholder.com/200x150/DDA0DD/000000?text=视频封面3',
-        'https://via.placeholder.com/200x150/FFB6C1/000000?text=视频封面4',
-        'https://via.placeholder.com/200x150/F0E68C/000000?text=视频封面5'
+        'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png',
+        'https://youke1.picui.cn/s1/2025/08/25/68abd1330b651.png',
+        'https://youke1.picui.cn/s1/2025/08/25/68abd13504421.jpg',
+        'https://youke1.picui.cn/s1/2025/08/25/68abd13484aea.png',
+        'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png'
     ];
     
     // 根据脚本内容哈希选择缩略图
@@ -1269,7 +1430,7 @@ function simulateUpload() {
 function showUploadSuccess() {
     // 添加新的素材卡片到网格中
     const materialsGrid = document.querySelector('.materials-grid');
-    const newMaterialCard = createMaterialCard('新上传视频', 'https://via.placeholder.com/200x200/27AE60/000000?text=新视频');
+    const newMaterialCard = createMaterialCard('新上传视频', 'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png');
     materialsGrid.appendChild(newMaterialCard);
     
     // 显示成功提示
@@ -1650,7 +1811,7 @@ function createTaskItem(task, taskNumber) {
     
     taskItem.innerHTML = `
         <div class="task-meta">
-            <h4 class="task-title" onclick="viewTaskDetails(${task.id})" style="cursor: pointer;">
+            <h4 class="task-title" onclick="viewTask(${task.id})" style="cursor: pointer;">
                 ${task.id}-${task.title}
                 ${overallStatus}
             </h4>
@@ -1892,10 +2053,6 @@ function publishVideo() {
     }, 1500);
 }
 
-// 初始化时间轴
-function initializeTimeline() {
-    // 这里可以添加时间轴初始化逻辑
-}
 
 // 初始化编辑器视频播放器
 function initializeEditorVideoPlayer() {
@@ -1929,11 +2086,16 @@ function initializeTimeline() {
     ];
     
     timelineTrack.innerHTML = segments.map((segment, index) => `
-        <div class="timeline-segment ${index === 0 ? 'selected' : ''}" onclick="selectTimelineSegment(${index})">
+        <div class="timeline-segment ${index === 0 ? 'selected' : ''}" 
+             data-segment-index="${index}"
+             title="单击选择，双击替换视频">
             <img src="${segment.thumbnail}" alt="片段${segment.id}">
             <div class="segment-number">${segment.id}</div>
         </div>
     `).join('');
+    
+    // 添加事件监听器
+    addTimelineSegmentListeners();
 }
 
 // 选择时间轴片段
@@ -1969,14 +2131,52 @@ function updateVideoPlayer(segmentIndex) {
         '经典与时尚的完美诠释'
     ];
     
-    if (videoSources[segmentIndex]) {
+    if (videoPlayer && videoSources[segmentIndex]) {
         videoPlayer.src = videoSources[segmentIndex];
         videoPlayer.load();
     }
     
-    if (overlayTexts[segmentIndex]) {
+    if (overlayText && overlayTexts[segmentIndex]) {
         overlayText.textContent = overlayTexts[segmentIndex];
     }
+}
+
+// 添加时间轴片段事件监听器
+function addTimelineSegmentListeners() {
+    const timelineTrack = document.getElementById('timelineTrack');
+    
+    if (!timelineTrack) {
+        console.error('找不到时间轴容器');
+        return;
+    }
+    
+    console.log('正在添加时间轴事件监听器');
+    
+    // 使用事件委托处理单击和双击
+    timelineTrack.addEventListener('click', function(e) {
+        const segment = e.target.closest('.timeline-segment');
+        if (segment) {
+            const index = parseInt(segment.dataset.segmentIndex);
+            console.log('单击片段:', index);
+            selectTimelineSegment(index);
+        }
+    });
+    
+    timelineTrack.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('检测到双击事件');
+        const segment = e.target.closest('.timeline-segment');
+        if (segment) {
+            const index = parseInt(segment.dataset.segmentIndex);
+            console.log('双击片段:', index);
+            openVideoReplaceModal(index);
+        } else {
+            console.log('未找到片段元素');
+        }
+    });
+    
+    console.log('时间轴事件监听器已添加');
 }
 
 // 添加时间轴片段
@@ -1986,7 +2186,7 @@ function addTimelineSegment() {
     
     const newSegment = document.createElement('div');
     newSegment.className = 'timeline-segment';
-    newSegment.onclick = () => selectTimelineSegment(newSegmentId - 1);
+    newSegment.dataset.segmentIndex = newSegmentId - 1;
     newSegment.innerHTML = `
         <img src="https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png" alt="片段${newSegmentId}">
         <div class="segment-number">${newSegmentId}</div>
@@ -3182,16 +3382,178 @@ function filterTasks(filter) {
 }
 
 function viewTask(taskId) {
-    const task = window.taskManager.tasks.find(t => t.id === taskId);
-    if (!task) return;
+    console.log('viewTask被调用，taskId:', taskId);
+    console.log('taskManager:', window.taskManager);
+    console.log('tasks:', window.taskManager ? window.taskManager.tasks : 'undefined');
     
-    // 保持抽屉打开状态
+    const task = window.taskManager.tasks.find(t => t.id == taskId);
+    console.log('找到的任务:', task);
+    
+    if (!task) {
+        console.error('未找到任务:', taskId);
+        showMessage('未找到指定任务', 'error');
+        return;
+    }
+    
+    // 关闭任务抽屉
+    const taskDrawer = document.getElementById('taskDrawer');
+    if (taskDrawer) {
+        taskDrawer.classList.remove('show');
+        console.log('任务抽屉已关闭');
+    }
+    
     // 跳转到脚本生成页面（步骤2）
+    console.log('准备跳转到步骤2');
     showStep(2);
     
-    // 可以在这里预填充任务相关的脚本内容
+    // 预填充任务相关的脚本内容
+    console.log('准备预填充任务数据');
+    prefillTaskData(task);
+    
     console.log('查看任务:', task);
-    showMessage('已跳转到脚本生成页面', 'info');
+    showMessage(`已跳转到任务 "${task.title}" 的脚本生成页面`, 'success');
+}
+
+// 预填充任务数据到脚本生成页面
+function prefillTaskData(task) {
+    // 更新商品信息显示
+    updateProductInfoForTask(task);
+    
+    // 更新脚本配置区域
+    updateScriptConfiguration(task);
+    
+    // 生成并显示任务相关的脚本列表
+    generateTaskScripts(task);
+    
+    // 更新页面标题显示当前任务
+    updatePageTitle(task);
+}
+
+// 更新商品信息显示
+function updateProductInfoForTask(task) {
+    const productInfo = document.getElementById('productInfo');
+    const productName = document.getElementById('productName');
+    const productLink = document.getElementById('productLink');
+    const productImage = document.getElementById('productImage');
+    
+    if (productInfo && productName && productLink && productImage) {
+        productName.textContent = task.productName || '商品名称';
+        productLink.textContent = task.productLink || 'https://detail.vip.com/detail-1710616752-6920810386380828624.html';
+        productImage.src = task.productImage || 'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png';
+        productInfo.style.display = 'block';
+    }
+    
+    // 显示AI商品信息
+    const aiProductInfo = document.getElementById('aiProductInfo');
+    if (aiProductInfo) {
+        aiProductInfo.style.display = 'block';
+    }
+}
+
+// 生成任务相关的脚本
+function generateTaskScripts(task) {
+    const scriptList = document.getElementById('scriptList');
+    if (!scriptList) return;
+    
+    // 清空现有脚本
+    scriptList.innerHTML = '';
+    
+    // 根据任务类型生成不同的脚本
+    const scripts = generateMockScriptsForTask(task);
+    
+    scripts.forEach((script, index) => {
+        // 根据任务类型确定模型
+        const model = getModelForTask(task);
+        
+        const scriptItem = document.createElement('div');
+        scriptItem.className = 'script-item';
+        scriptItem.innerHTML = `
+            <div class="script-header">
+                <h5>脚本${index + 1}<span class="script-model-tag ${model.toLowerCase()}">${model}</span></h5>
+                <span class="script-status">${script.status}</span>
+            </div>
+            <div class="script-content">
+                <p>${script.content}</p>
+            </div>
+            <div class="script-actions">
+                <button class="btn btn-sm btn-outline" onclick="applyScript(this)">直接应用</button>
+                <button class="btn btn-sm btn-outline" onclick="editScript(this)">自行修改</button>
+                <button class="btn btn-sm btn-outline" onclick="regenerateScript(this)">重新生成</button>
+            </div>
+        `;
+        scriptList.appendChild(scriptItem);
+    });
+}
+
+// 根据任务类型确定使用的模型
+function getModelForTask(task) {
+    const modelMapping = {
+        '儿童纯棉百搭小清新碎花上衣': 'O1',
+        '夏季T恤视频制作': 'R1',
+        '时尚连衣裙视频制作': 'O1',
+        '连衣裙推广视频': 'O1'
+    };
+    
+    return modelMapping[task.title] || 'O1';
+}
+
+// 生成任务相关的mock脚本
+function generateMockScriptsForTask(task) {
+    const scriptTemplates = {
+        '儿童纯棉百搭小清新碎花上衣': [
+            {
+                content: '这款儿童纯棉上衣采用优质纯棉面料，柔软亲肤，透气不闷热。荷叶领口设计，甜美可爱，适合各种场合穿着。小清新碎花图案，让孩子更加活泼可爱。',
+                status: '已完成'
+            },
+            {
+                content: '纯棉材质，亲肤透气，荷叶领口设计，甜美可爱。小清新碎花图案，让孩子更加活泼可爱。适合日常穿着，舒适又时尚。',
+                status: '已完成'
+            },
+            {
+                content: '优质纯棉面料，柔软亲肤，透气不闷热。荷叶领口设计，甜美可爱，适合各种场合穿着。小清新碎花图案，让孩子更加活泼可爱。',
+                status: '已完成'
+            }
+        ],
+        '夏季T恤视频制作': [
+            {
+                content: '这款夏季T恤采用优质纯棉面料，柔软亲肤，透气不闷热。简约设计，适合各种场合穿着。',
+                status: '已完成'
+            },
+            {
+                content: '纯棉材质，亲肤透气，简约设计，适合各种场合穿着。夏季必备单品，舒适又时尚。',
+                status: '已完成'
+            }
+        ],
+        '连衣裙推广视频': [
+            {
+                content: '这款连衣裙采用优质面料，版型优雅，适合各种场合穿着。简约设计，展现女性魅力。',
+                status: '已完成'
+            },
+            {
+                content: '优雅版型，优质面料，适合各种场合穿着。简约设计，展现女性魅力。',
+                status: '已完成'
+            }
+        ]
+    };
+    
+    return scriptTemplates[task.title] || [
+        {
+            content: '这是一个示例脚本，展示了商品的主要特点和卖点。',
+            status: '已完成'
+        },
+        {
+            content: '这是另一个示例脚本，从不同角度介绍商品的优势。',
+            status: '已完成'
+        }
+    ];
+}
+
+// 更新页面标题
+function updatePageTitle(task) {
+    const stepHeader = document.querySelector('#step2 .step-header h3');
+    if (stepHeader) {
+        stepHeader.textContent = `步骤2：脚本生成 - ${task.title}`;
+    }
 }
 
 // 查看任务详情（在左侧显示脚本配置）
@@ -3212,16 +3574,12 @@ function updateScriptConfiguration(task) {
         productInfo.style.display = 'block';
         const productImage = document.getElementById('productImage');
         if (productImage) {
-            productImage.src = 'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png';
+            productImage.src = task.productImage || 'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png';
         }
     }
     
-    // 更新脚本内容
-    const scriptTextarea = document.getElementById('scriptText');
-    if (scriptTextarea) {
-        scriptTextarea.value = task.script || '';
-        updateCharacterCount();
-    }
+    // 更新脚本配置选项
+    updateScriptConfigOptions(task);
     
     // 更新音色选择
     if (task.voice) {
@@ -3234,6 +3592,83 @@ function updateScriptConfiguration(task) {
     
     // 更新脚本列表
     updateScriptList(task);
+}
+
+// 更新脚本配置选项
+function updateScriptConfigOptions(task) {
+    // 根据任务类型设置不同的配置选项
+    const configOptions = getTaskConfigOptions(task);
+    
+    // 更新应用场景
+    const scenarioRadios = document.querySelectorAll('input[name="scenario"]');
+    scenarioRadios.forEach(radio => {
+        if (radio.value === configOptions.scenario) {
+            radio.checked = true;
+        }
+    });
+    
+    // 更新优惠信息
+    const discountInput = document.querySelector('.config-input[placeholder="请输入描述内容"]');
+    if (discountInput) {
+        discountInput.value = configOptions.discount || '';
+    }
+    
+    // 更新脚本风格
+    const styleRadios = document.querySelectorAll('input[name="style"]');
+    styleRadios.forEach(radio => {
+        if (radio.value === configOptions.style) {
+            radio.checked = true;
+        }
+    });
+    
+    // 更新适用人群
+    const audienceInput = document.querySelector('.config-input[placeholder="请输入适用人群"]');
+    if (audienceInput) {
+        audienceInput.value = configOptions.audience || '';
+    }
+    
+    // 更新字数范围
+    const wordCountRadios = document.querySelectorAll('input[name="wordCount"]');
+    wordCountRadios.forEach(radio => {
+        if (radio.value === configOptions.wordCount) {
+            radio.checked = true;
+        }
+    });
+}
+
+// 获取任务配置选项
+function getTaskConfigOptions(task) {
+    const configTemplates = {
+        '儿童纯棉百搭小清新碎花上衣': {
+            scenario: 'daily',
+            discount: '限时优惠，买二送一',
+            style: 'cute',
+            audience: '3-8岁儿童',
+            wordCount: 'medium'
+        },
+        '夏季T恤视频制作': {
+            scenario: 'daily',
+            discount: '夏季特惠，全场8折',
+            style: 'casual',
+            audience: '18-35岁年轻人',
+            wordCount: 'short'
+        },
+        '连衣裙推广视频': {
+            scenario: 'platform',
+            discount: '新品上市，限时优惠',
+            style: 'elegant',
+            audience: '25-40岁女性',
+            wordCount: 'long'
+        }
+    };
+    
+    return configTemplates[task.title] || {
+        scenario: 'daily',
+        discount: '',
+        style: 'casual',
+        audience: '',
+        wordCount: 'medium'
+    };
 }
 
 // 更新脚本列表
@@ -3321,6 +3756,7 @@ function initializeTaskManagement() {
 
 // 加载示例任务
 function loadSampleTasks() {
+    console.log('开始加载示例任务');
     const sampleTasks = [
         {
             id: '6921298477540574538',
@@ -3374,6 +3810,7 @@ function loadSampleTasks() {
     
     window.taskManager.tasks = sampleTasks;
     window.taskManager.nextId = 4;
+    console.log('示例任务已加载:', window.taskManager.tasks);
     updateTaskDrawer();
 }
 
@@ -3598,6 +4035,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化脚本生成方法
     window.currentScriptMethod = 'ai';
+    
+    // 初始化AI模型选择
+    window.currentAIModel = 'O1';
     
     // 初始化预览视频相关
     window.currentPreviewVideos = [];
@@ -4158,6 +4598,397 @@ function previewVideo() {
 function editShots() {
     showMessage('镜头编辑功能开发中...', 'info');
     // 这里可以添加镜头编辑的逻辑
+}
+
+// 打开视频替换弹窗
+function openVideoReplaceModal(segmentIndex) {
+    console.log('打开视频替换弹窗，片段索引:', segmentIndex);
+    currentReplaceSegmentIndex = segmentIndex;
+    const modal = document.getElementById('videoReplaceModal');
+    
+    if (!modal) {
+        console.error('找不到视频替换弹窗元素');
+        return;
+    }
+    
+    modal.style.display = 'flex';
+    console.log('弹窗已显示');
+    
+    // 重置状态
+    document.getElementById('confirmReplaceBtn').disabled = true;
+    selectedMaterial = null;
+    newVideoFile = null;
+    
+    // 初始化素材库
+    initializeMaterialLibrary();
+    showMessage('视频替换弹窗已打开', 'info');
+}
+
+// 关闭视频替换弹窗
+function closeVideoReplaceModal() {
+    const modal = document.getElementById('videoReplaceModal');
+    modal.style.display = 'none';
+    currentReplaceSegmentIndex = -1;
+    newVideoFile = null;
+}
+
+// 初始化视频上传功能
+function initializeVideoUpload() {
+    const uploadArea = document.getElementById('videoUploadArea');
+    const fileInput = document.getElementById('videoFileInput');
+    
+    // 点击上传区域
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // 文件选择事件
+    fileInput.addEventListener('change', handleVideoFileSelect);
+    
+    // 拖拽事件
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleVideoFile(files[0]);
+        }
+    });
+}
+
+// 处理视频文件选择
+function handleVideoFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        handleVideoFile(file);
+    }
+}
+
+// 处理视频文件
+function handleVideoFile(file) {
+    // 检查文件类型
+    if (!file.type.startsWith('video/')) {
+        showMessage('请选择视频文件', 'warning');
+        return;
+    }
+    
+    newVideoFile = file;
+    
+    // 创建视频URL用于预览
+    const videoUrl = URL.createObjectURL(file);
+    
+    // 显示预览区域
+    const previewSection = document.getElementById('videoPreviewSection');
+    previewSection.style.display = 'block';
+    
+    // 设置预览视频
+    const previewVideo = document.getElementById('newVideoPreview');
+    previewVideo.src = videoUrl;
+    
+    // 更新视频信息
+    document.getElementById('newVideoName').textContent = file.name;
+    
+    // 获取视频时长
+    previewVideo.addEventListener('loadedmetadata', () => {
+        const duration = previewVideo.duration;
+        document.getElementById('newVideoDuration').textContent = `时长: ${duration.toFixed(1)}s`;
+    });
+    
+    // 启用确认按钮
+    document.getElementById('confirmReplaceBtn').disabled = false;
+    
+    showMessage('视频文件已选择，可以预览', 'success');
+}
+
+// 确认视频替换
+function confirmVideoReplace() {
+    if (!selectedMaterial && !newVideoFile || currentReplaceSegmentIndex === -1) {
+        showMessage('请先选择要替换的视频文件', 'warning');
+        return;
+    }
+    
+    const segments = document.querySelectorAll('.timeline-segment');
+    const targetSegment = segments[currentReplaceSegmentIndex];
+    const segmentImg = targetSegment.querySelector('img');
+    
+    if (selectedMaterial) {
+        // 使用素材库中的视频
+        segmentImg.src = selectedMaterial.thumbnail;
+        showMessage(`片段 ${currentReplaceSegmentIndex + 1} 已替换为素材库视频`, 'success');
+    } else if (newVideoFile) {
+        // 使用上传的视频
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 100;
+        canvas.height = 60;
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, 100, 60);
+        ctx.fillStyle = '#666';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('新视频', 50, 35);
+        
+        segmentImg.src = canvas.toDataURL();
+        showMessage(`片段 ${currentReplaceSegmentIndex + 1} 已替换为上传视频`, 'success');
+    }
+    
+    closeVideoReplaceModal();
+}
+
+// 初始化素材库
+function initializeMaterialLibrary() {
+    renderMaterialGrid();
+    updateMaterialPagination();
+}
+
+// 渲染素材网格
+function renderMaterialGrid() {
+    const materialGrid = document.getElementById('materialGrid');
+    const filteredData = getFilteredMaterials();
+    const startIndex = (currentMaterialPage - 1) * materialPageSize;
+    const endIndex = startIndex + materialPageSize;
+    const pageData = filteredData.slice(startIndex, endIndex);
+    
+    materialGrid.innerHTML = pageData.map(material => `
+        <div class="material-item" onclick="selectMaterial(${material.id})">
+            <input type="radio" name="materialSelect" value="${material.id}" ${selectedMaterial && selectedMaterial.id === material.id ? 'checked' : ''}>
+            <img src="${material.thumbnail}" alt="${material.title}" class="material-thumbnail">
+            <div class="material-info">
+                <div class="product-name">${material.name}</div>
+                <div class="product-title">${material.title}</div>
+                <div class="video-duration">视频时长: ${material.duration}</div>
+                <div class="video-size">视频大小: ${material.size}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 获取过滤后的素材数据
+function getFilteredMaterials() {
+    if (!materialSearchKeyword) {
+        return materialLibraryData;
+    }
+    return materialLibraryData.filter(material => 
+        material.title.toLowerCase().includes(materialSearchKeyword.toLowerCase()) ||
+        material.name.toLowerCase().includes(materialSearchKeyword.toLowerCase())
+    );
+}
+
+// 选择素材
+function selectMaterial(materialId) {
+    selectedMaterial = materialLibraryData.find(m => m.id === materialId);
+    
+    // 更新选中状态
+    document.querySelectorAll('.material-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // 启用确认按钮
+    document.getElementById('confirmReplaceBtn').disabled = false;
+    
+    showMessage('已选择素材', 'success');
+}
+
+
+// 搜索素材
+function searchMaterials() {
+    materialSearchKeyword = document.getElementById('materialSearchInput').value;
+    currentMaterialPage = 1;
+    renderMaterialGrid();
+    updateMaterialPagination();
+}
+
+// 更新素材分页
+function updateMaterialPagination() {
+    const filteredData = getFilteredMaterials();
+    const totalPages = Math.ceil(filteredData.length / materialPageSize);
+    
+    document.getElementById('materialCount').textContent = `共${filteredData.length}条`;
+    
+    // 更新分页按钮
+    const pagination = document.querySelector('.library-pagination .pagination');
+    const pageButtons = pagination.querySelectorAll('.page-btn:not(.prev):not(.next)');
+    
+    pageButtons.forEach((btn, index) => {
+        const pageNum = index + 1;
+        btn.textContent = pageNum;
+        btn.classList.toggle('active', pageNum === currentMaterialPage);
+        btn.style.display = pageNum <= totalPages ? 'block' : 'none';
+    });
+}
+
+// 切换素材页面
+function changeMaterialPage(page) {
+    const filteredData = getFilteredMaterials();
+    const totalPages = Math.ceil(filteredData.length / materialPageSize);
+    
+    if (page === 'prev') {
+        if (currentMaterialPage > 1) {
+            currentMaterialPage--;
+        }
+    } else if (page === 'next') {
+        if (currentMaterialPage < totalPages) {
+            currentMaterialPage++;
+        }
+    } else {
+        currentMaterialPage = page;
+    }
+    
+    renderMaterialGrid();
+    updateMaterialPagination();
+}
+
+// 前往指定页面
+function goToMaterialPage() {
+    const pageSizeSelect = document.getElementById('materialPageSize');
+    materialPageSize = parseInt(pageSizeSelect.value);
+    currentMaterialPage = 1;
+    renderMaterialGrid();
+    updateMaterialPagination();
+}
+
+// 打开视频上传弹窗
+function openVideoUploadModal() {
+    const modal = document.getElementById('videoUploadModal');
+    modal.style.display = 'flex';
+    
+    // 初始化上传功能
+    initializeVideoUploadFunction();
+}
+
+// 关闭视频上传弹窗
+function closeVideoUploadModal() {
+    const modal = document.getElementById('videoUploadModal');
+    modal.style.display = 'none';
+}
+
+// 初始化视频上传功能
+function initializeVideoUploadFunction() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    
+    // 点击上传区域
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // 文件选择事件
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    // 拖拽事件
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+}
+
+// 处理文件选择
+function handleFileSelect(event) {
+    const files = event.target.files;
+    handleFiles(files);
+}
+
+// 处理文件
+function handleFiles(files) {
+    const uploadList = document.getElementById('uploadList');
+    const currentCount = uploadList.children.length;
+    
+    if (currentCount + files.length > 10) {
+        showMessage('最多只能上传10个文件', 'warning');
+        return;
+    }
+    
+    Array.from(files).forEach(file => {
+        if (file.type.startsWith('video/')) {
+            addFileToList(file);
+        } else {
+            showMessage(`文件 ${file.name} 不是视频格式`, 'warning');
+        }
+    });
+}
+
+// 添加文件到列表
+function addFileToList(file) {
+    const uploadList = document.getElementById('uploadList');
+    const fileItem = document.createElement('div');
+    fileItem.className = 'upload-item';
+    fileItem.innerHTML = `
+        <div class="upload-item-info">
+            <i class="fas fa-video upload-item-icon"></i>
+            <div>
+                <div class="upload-item-name">${file.name}</div>
+                <div class="upload-item-size">${formatFileSize(file.size)}</div>
+            </div>
+        </div>
+        <button class="upload-item-remove" onclick="removeFile(this)">删除</button>
+    `;
+    uploadList.appendChild(fileItem);
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// 删除文件
+function removeFile(button) {
+    button.closest('.upload-item').remove();
+}
+
+// 提交视频上传
+function submitVideoUpload() {
+    const uploadList = document.getElementById('uploadList');
+    const syncToLibrary = document.getElementById('syncToLibrary').checked;
+    
+    if (uploadList.children.length === 0) {
+        showMessage('请选择要上传的文件', 'warning');
+        return;
+    }
+    
+    const fileCount = uploadList.children.length;
+    const syncText = syncToLibrary ? '并同步至原料库' : '';
+    
+    showMessage(`正在上传${fileCount}个视频文件${syncText}...`, 'info');
+    
+    // 模拟上传过程
+    setTimeout(() => {
+        if (syncToLibrary) {
+            showMessage('视频上传成功并已同步至原料库！', 'success');
+        } else {
+            showMessage('视频上传成功！', 'success');
+        }
+        
+        closeVideoUploadModal();
+        
+        // 重置表单
+        document.getElementById('uploadList').innerHTML = '';
+        document.getElementById('syncToLibrary').checked = false;
+    }, 2000);
 }
 
 // 生成视频

@@ -145,6 +145,11 @@
                                 <input type="text" id="productId" placeholder="请输入唯品会商品链接或ID">
                                 <button class="btn btn-primary" onclick="identifyProduct()">识别商品</button>
                             </div>
+                            <!-- 原料库状态提示 -->
+                            <div class="material-hint" id="materialHint" style="display: none;">
+                                <span class="hint-text" id="materialHintText"></span>
+                                <button class="hint-link" id="materialHintLink" onclick="uploadNewMaterial()" style="display: none;">上传素材</button>
+                            </div>
                         </div>
                         
                         <!-- 识别后的商品信息 -->
@@ -338,6 +343,21 @@
 
                             <!-- AI生成配置 -->
                             <div class="config-panel active" id="aiConfig">
+                                <!-- 模型选择 -->
+                                <div class="config-item">
+                                    <label>AI模型</label>
+                                    <div class="radio-group">
+                                        <label class="radio-item">
+                                            <input type="radio" name="aiModel" value="deepseekr1" checked>
+                                            <span>DeepSeekR1</span>
+                                        </label>
+                                        <label class="radio-item">
+                                            <input type="radio" name="aiModel" value="qwen">
+                                            <span>Qwen</span>
+                                        </label>
+                                    </div>
+                                </div>
+
                                 <!-- 应用场景 -->
                                 <div class="config-item">
                                     <label class="required">应用场景</label>
@@ -560,7 +580,7 @@
                             <div class="shots-grid" id="shotsGrid">
                                 <div class="shot-item" data-segment="1" onclick="selectShot(1)">
                                     <div class="shot-thumbnail">
-                                        <img src="https://via.placeholder.com/200x150/FF6B6B/FFFFFF?text=开场介绍" alt="镜头1">
+                                        <img src="https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png" alt="镜头1">
                                         <div class="shot-overlay">
                                             <i class="fas fa-play"></i>
                                         </div>
@@ -574,7 +594,7 @@
                                 
                                 <div class="shot-item" data-segment="2" onclick="selectShot(2)">
                                     <div class="shot-thumbnail">
-                                        <img src="https://via.placeholder.com/200x150/4ECDC4/FFFFFF?text=面料展示" alt="镜头2">
+                                        <img src="https://youke1.picui.cn/s1/2025/08/25/68abd1330b651.png" alt="镜头2">
                                         <div class="shot-overlay">
                                             <i class="fas fa-play"></i>
                                         </div>
@@ -588,7 +608,7 @@
                                 
                                 <div class="shot-item" data-segment="3" onclick="selectShot(3)">
                                     <div class="shot-thumbnail">
-                                        <img src="https://via.placeholder.com/200x150/45B7D1/FFFFFF?text=设计细节" alt="镜头3">
+                                        <img src="https://youke1.picui.cn/s1/2025/08/25/68abd13504421.jpg" alt="镜头3">
                                         <div class="shot-overlay">
                                             <i class="fas fa-play"></i>
                                         </div>
@@ -602,7 +622,7 @@
                                 
                                 <div class="shot-item" data-segment="4" onclick="selectShot(4)">
                                     <div class="shot-thumbnail">
-                                        <img src="https://via.placeholder.com/200x150/F7DC6F/FFFFFF?text=搭配展示" alt="镜头4">
+                                        <img src="https://youke1.picui.cn/s1/2025/08/25/68abd13484aea.png" alt="镜头4">
                                         <div class="shot-overlay">
                                             <i class="fas fa-play"></i>
                                         </div>
@@ -616,7 +636,7 @@
                                 
                                 <div class="shot-item" data-segment="5" onclick="selectShot(5)">
                                     <div class="shot-thumbnail">
-                                        <img src="https://via.placeholder.com/200x150/BB8FCE/FFFFFF?text=购买引导" alt="镜头5">
+                                        <img src="https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png" alt="镜头5">
                                         <div class="shot-overlay">
                                             <i class="fas fa-play"></i>
                                         </div>
@@ -1286,6 +1306,116 @@
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 视频替换弹窗 -->
+    <div class="video-replace-modal" id="videoReplaceModal">
+        <div class="video-replace-container">
+            <div class="video-replace-header">
+                <h3>替换视频片段</h3>
+                <div class="header-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openVideoUploadModal()">
+                        <i class="fas fa-upload"></i>
+                        自主上传
+                    </button>
+                    <button class="close-btn" onclick="closeVideoReplaceModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="video-replace-content">
+                <!-- 素材库选择区域 -->
+                <div class="material-library-section">
+                    <div class="library-header">
+                        <h5>素材库</h5>
+                        <div class="library-search">
+                            <input type="text" id="materialSearchInput" placeholder="搜索素材..." oninput="searchMaterials()">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="material-grid" id="materialGrid">
+                        <!-- 素材项目将在这里动态生成 -->
+                    </div>
+                    
+                    <div class="library-pagination">
+                        <div class="pagination-info">
+                            <span id="materialCount">共45条</span>
+                        </div>
+                        <div class="pagination">
+                            <button class="page-btn" onclick="changeMaterialPage('prev')">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="page-btn active" onclick="changeMaterialPage(1)">1</button>
+                            <button class="page-btn" onclick="changeMaterialPage(2)">2</button>
+                            <button class="page-btn" onclick="changeMaterialPage(3)">3</button>
+                            <button class="page-btn" onclick="changeMaterialPage(4)">4</button>
+                            <button class="page-btn" onclick="changeMaterialPage(5)">5</button>
+                            <button class="page-btn" onclick="changeMaterialPage('next')">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="page-size">
+                            <select id="materialPageSize">
+                                <option value="10">10条/页</option>
+                                <option value="20">20条/页</option>
+                                <option value="50">50条/页</option>
+                            </select>
+                            <button class="btn btn-sm" onclick="goToMaterialPage()">前往</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="video-replace-footer">
+                <button class="btn btn-secondary" onclick="closeVideoReplaceModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmVideoReplace()" id="confirmReplaceBtn" disabled>确认替换</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 视频上传弹窗 -->
+    <div class="video-upload-modal" id="videoUploadModal">
+        <div class="video-upload-container">
+            <div class="video-upload-header">
+                <h3>上传视频素材</h3>
+                <button class="close-btn" onclick="closeVideoUploadModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="video-upload-content">
+                <!-- 文件上传 -->
+                <div class="upload-section">
+                    <h4>文件上传</h4>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>点击或拖拽文件到此处上传</p>
+                            <p class="upload-hint">支持1-10个视频文件，总计不超过100条</p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept="video/*" style="display: none;">
+                    </div>
+                    <div class="upload-list" id="uploadList">
+                        <!-- 上传的文件列表将在这里显示 -->
+                    </div>
+                </div>
+
+                <!-- 同步选项 -->
+                <div class="upload-section">
+                    <div class="sync-option">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="syncToLibrary">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">同步至原料库</span>
+                        </label>
+                        <p class="sync-hint">勾选后，上传的视频将永久保存到原料库中，供后续使用</p>
+                    </div>
+                </div>
+            </div>
+            <div class="video-upload-footer">
+                <button class="btn btn-secondary" onclick="closeVideoUploadModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitVideoUpload()">提交</button>
             </div>
         </div>
     </div>
