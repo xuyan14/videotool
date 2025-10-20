@@ -3176,18 +3176,6 @@ body {
 
 
 
-.video-player-container {
-    position: relative;
-    width: 100%;
-    height: 400px;
-    margin-bottom: 20px;
-    background: #000;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
 
 .video-player {
     width: 100%;
@@ -4394,6 +4382,70 @@ body {
     min-width: 40px;
 }
 
+/* BGM控制样式 */
+.bgm-controls {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.bgm-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bgm-selector select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-label .checkmark {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ddd;
+    border-radius: 3px;
+    margin-right: 8px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 3px;
+    height: 6px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
 /* 右侧视频预览 */
 .editor-video-preview {
     flex: 1;
@@ -4404,42 +4456,80 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    z-index: 1;
 }
 
 .video-player-container {
     position: relative;
     width: 100%;
-    max-width: 300px;
-    height: 0;
-    padding-bottom: 177.77%; /* 9:16 竖屏比例 */
-    background: #34495e;
+    max-width: 400px;
+    height: 600px;
+    background: transparent;
     border-radius: 12px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 10;
 }
 
 .video-player-container video {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: relative;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 12px;
     background: #000;
+    z-index: 20;
+}
+
+/* 字幕覆盖层 */
+.video-subtitle-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4;
+    border-radius: 6px;
+    z-index: 30;
+    max-width: 90%;
+    text-align: center;
+}
+
+/* 四要素价格图覆盖层 */
+.video-price-overlay {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 96px;
+    height: auto;
+    z-index: 30;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    object-fit: contain;
+    background: #fff;
 }
 
 /* 确保视频控制条在竖屏视频中正常显示 */
 .video-player-container video::-webkit-media-controls {
     display: flex !important;
+    z-index: 30 !important;
 }
 
 .video-player-container video::-webkit-media-controls-panel {
-    background: rgba(0, 0, 0, 0.7);
+    background: transparent !important;
     border-radius: 0 0 12px 12px;
+    z-index: 30 !important;
+}
+
+/* 确保视频没有黑色遮罩 */
+.video-player-container video {
+    background: transparent !important;
 }
 
 /* 模拟竖屏视频内容样式 */
@@ -5597,4 +5687,81 @@ body {
     color: #666;
     margin: 0;
     line-height: 1.4;
+}
+
+/* 视频生成选项样式 */
+.video-options {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.options-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label.small {
+    font-size: 12px;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+.checkbox-label.small .checkmark {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+}
+
+.checkbox-label.small input[type="checkbox"]:checked + .checkmark::after {
+    left: 3px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+}
+
+/* 内联视频生成选项样式 */
+.video-options-inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-right: 16px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.video-options-inline .options-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.options-grid-inline {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.options-grid-inline .option-item {
+    display: flex;
+    align-items: center;
 }

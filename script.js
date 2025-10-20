@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTaskManagement();
     initializeScriptList();
     initializeAIModel();
+    initializeEditorPreviewOverlays();
 });
 
 // 当前步骤
@@ -836,11 +837,30 @@ function generateScript() {
     const scriptList = document.getElementById('scriptList');
     if (!scriptList) return;
     
+    // 获取视频生成选项
+    const enableSubtitles = document.getElementById('scriptEnableSubtitles').checked;
+    const enableBGM = document.getElementById('scriptEnableBGM').checked;
+    const enableFlowerText = document.getElementById('scriptEnableFlowerText').checked;
+    const enableEndBoard = document.getElementById('scriptEnableEndBoard').checked;
+    
     // 显示生成中状态
     const generateBtn = document.querySelector('.config-actions .btn-primary');
     const originalText = generateBtn.textContent;
     generateBtn.textContent = '生成中...';
     generateBtn.disabled = true;
+    
+    // 显示生成选项信息
+    const options = [];
+    if (enableSubtitles) options.push('字幕');
+    if (enableBGM) options.push('BGM');
+    if (enableFlowerText) options.push('四要素');
+    if (enableEndBoard) options.push('尾板');
+    
+    let message = '正在生成脚本';
+    if (options.length > 0) {
+        message += `（包含: ${options.join('、')}）`;
+    }
+    showMessage(message + '...', 'info');
     
     setTimeout(() => {
         // 获取当前选择的字数范围
@@ -881,7 +901,11 @@ function generateScript() {
         generateBtn.textContent = originalText;
         generateBtn.disabled = false;
         
-        showMessage(`已生成脚本${currentScriptCount}`, 'success');
+        let successMessage = `已生成脚本${currentScriptCount}`;
+        if (options.length > 0) {
+            successMessage += `（已配置${options.join('、')}）`;
+        }
+        showMessage(successMessage, 'success');
     }, 2000);
 }
 
@@ -2014,8 +2038,64 @@ function switchVoiceTab(tab) {
     tabs.forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
     
-    // 这里可以根据标签页切换不同的音色选项
-    showMessage(`切换到${event.target.textContent}模式`, 'info');
+    // 根据性别类型显示不同的音色选项
+    const voiceGrid = document.getElementById('voiceGrid');
+    if (voiceGrid) {
+        let voiceOptions = [];
+        switch(tab) {
+            case 'male':
+                voiceOptions = [
+                    { name: '成熟男声', description: '稳重专业' },
+                    { name: '青年男声', description: '活力阳光' },
+                    { name: '磁性男声', description: '低沉魅力' }
+                ];
+                break;
+            case 'female':
+                voiceOptions = [
+                    { name: '甜美女生', description: '温柔可爱' },
+                    { name: '知性女声', description: '优雅知性' },
+                    { name: '活力女声', description: '青春活泼' }
+                ];
+                break;
+            case 'neutral':
+                voiceOptions = [
+                    { name: '中性音色', description: '平衡自然' },
+                    { name: '温和音色', description: '温和亲切' },
+                    { name: '专业音色', description: '专业标准' }
+                ];
+                break;
+        }
+        
+        // 渲染音色选项
+        voiceGrid.innerHTML = voiceOptions.map((voice, index) => `
+            <div class="voice-option" onclick="selectVoice(${index})">
+                <div class="voice-name">${voice.name}</div>
+                <div class="voice-desc">${voice.description}</div>
+            </div>
+        `).join('');
+    }
+    
+    showMessage(`切换到${event.target.textContent}音色`, 'info');
+}
+
+// 初始化音色配置
+function initializeVoiceSelection() {
+    // 默认显示女性音色选项
+    const voiceGrid = document.getElementById('voiceGrid');
+    if (voiceGrid) {
+        const femaleVoices = [
+            { name: '甜美女生', description: '温柔可爱' },
+            { name: '知性女声', description: '优雅知性' },
+            { name: '活力女声', description: '青春活泼' }
+        ];
+        
+        voiceGrid.innerHTML = femaleVoices.map((voice, index) => `
+            <div class="voice-option" onclick="selectVoice(${index})">
+                <div class="voice-name">${voice.name}</div>
+                <div class="voice-desc">${voice.description}</div>
+            </div>
+        `).join('');
+    }
 }
 
 // 更新字符计数
@@ -2039,6 +2119,7 @@ function updateToneVolume() {
     const value = document.getElementById('toneVolumeValue');
     value.textContent = slider.value + '%';
 }
+
 
 // 保存到草稿
 function saveToDraft() {
@@ -4993,14 +5074,103 @@ function submitVideoUpload() {
 
 // 生成视频
 function generateVideo() {
-    showMessage('正在生成最终视频...', 'info');
+    // 获取视频生成选项
+    const enableSubtitles = document.getElementById('enableSubtitles').checked;
+    const enableBGM = document.getElementById('enableBGM').checked;
+    const enableFlowerText = document.getElementById('enableFlowerText').checked;
+    const enableEndBoard = document.getElementById('enableEndBoard').checked;
+    
+    let message = '正在生成最终视频';
+    const options = [];
+    
+    if (enableSubtitles) options.push('字幕');
+    if (enableBGM) options.push('BGM');
+    if (enableFlowerText) options.push('四要素');
+    if (enableEndBoard) options.push('尾板');
+    
+    if (options.length > 0) {
+        message += `（包含: ${options.join('、')}）`;
+    }
+    
+    showMessage(message + '...', 'info');
     
     setTimeout(() => {
-        showMessage('视频生成完成！', 'success');
+        let successMessage = '视频生成完成';
+        if (options.length > 0) {
+            successMessage += `（已添加${options.join('、')}）`;
+        }
+        successMessage += '！';
+        showMessage(successMessage, 'success');
+        
         // 跳转到下载页面
         currentStep = 4;
         updateStepDisplay();
     }, 3000);
+}
+
+// 初始化编辑页预览覆盖层与尾板逻辑
+function initializeEditorPreviewOverlays() {
+    const subtitleChecked = document.getElementById('enableSubtitles')?.checked;
+    const fourChecked = document.getElementById('enableFlowerText')?.checked;
+    const subtitleOverlay = document.getElementById('subtitleOverlay');
+    const fourOverlay = document.getElementById('fourElementsOverlay');
+    if (subtitleOverlay) subtitleOverlay.style.display = subtitleChecked ? 'block' : 'none';
+    if (fourOverlay) fourOverlay.style.display = fourChecked ? 'block' : 'none';
+
+    const video = document.getElementById('editorVideoPlayer');
+    if (!video) return;
+
+    // 当主视频播放结束，若勾选尾板，则切换到尾板视频并循环播放
+    video.onended = () => {
+        const enableEndBoard = document.getElementById('enableEndBoard')?.checked;
+        if (!enableEndBoard) return;
+        const tailUrl = 'https://12131231-1302391623.cos.ap-beijing.myqcloud.com/%E5%B0%BE%E6%9D%BF%E8%A7%86%E9%A2%91.mp4';
+        if (video.currentSrc !== tailUrl) {
+            video.src = tailUrl;
+            video.loop = true;
+            video.play().catch(() => {});
+        }
+    };
+}
+
+// 处理视频生成选项变化
+function handleVideoOptionChange(optionName, isEnabled) {
+    const optionNames = {
+        'enableSubtitles': '字幕',
+        'enableBGM': 'BGM',
+        'enableFlowerText': '四要素',
+        'enableEndBoard': '尾板'
+    };
+    
+    const status = isEnabled ? '已启用' : '已禁用';
+    const optionText = optionNames[optionName] || optionName;
+    
+    showMessage(`${optionText}${status}`, 'info');
+
+    // 同步预览覆盖层显示/隐藏
+    if (optionName === 'enableSubtitles') {
+        const el = document.getElementById('subtitleOverlay');
+        if (el) el.style.display = isEnabled ? 'block' : 'none';
+    }
+    if (optionName === 'enableFlowerText') {
+        const el = document.getElementById('fourElementsOverlay');
+        if (el) el.style.display = isEnabled ? 'block' : 'none';
+    }
+}
+
+// 处理脚本生成页面的视频选项变化
+function handleScriptVideoOptionChange(optionName, isEnabled) {
+    const optionNames = {
+        'scriptEnableSubtitles': '字幕',
+        'scriptEnableBGM': 'BGM',
+        'scriptEnableFlowerText': '四要素',
+        'scriptEnableEndBoard': '尾板'
+    };
+    
+    const status = isEnabled ? '已启用' : '已禁用';
+    const optionText = optionNames[optionName] || optionName;
+    
+    showMessage(`脚本生成${optionText}${status}`, 'info');
 }
 
 // 根据字数范围获取脚本模板

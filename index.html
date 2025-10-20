@@ -514,10 +514,47 @@
                             <div class="results-header">
                                 <h4>生成的脚本</h4>
                                 <div class="header-actions">
+                                    <!-- 音色配置 -->
                                     <button class="btn btn-outline" onclick="openVoiceToneModal()">
                                         <i class="fas fa-microphone"></i>
                                         音色：<span id="selectedTone">甜美女生</span>
                                     </button>
+                                    
+                                    <!-- 生成选项 -->
+                                    <div class="video-options-inline">
+                                        <div class="options-title">生成选项</div>
+                                        <div class="options-grid-inline">
+                                            <div class="option-item">
+                                                <label class="checkbox-label small">
+                                                    <input type="checkbox" id="scriptEnableSubtitles" checked onchange="handleScriptVideoOptionChange('scriptEnableSubtitles', this.checked)">
+                                                    <span class="checkmark"></span>
+                                                    字幕
+                                                </label>
+                                            </div>
+                                            <div class="option-item">
+                                                <label class="checkbox-label small">
+                                                    <input type="checkbox" id="scriptEnableBGM" checked onchange="handleScriptVideoOptionChange('scriptEnableBGM', this.checked)">
+                                                    <span class="checkmark"></span>
+                                                    BGM
+                                                </label>
+                                            </div>
+                                            <div class="option-item">
+                                                <label class="checkbox-label small">
+                                                    <input type="checkbox" id="scriptEnableFlowerText" checked onchange="handleScriptVideoOptionChange('scriptEnableFlowerText', this.checked)">
+                                                    <span class="checkmark"></span>
+                                                    四要素
+                                                </label>
+                                            </div>
+                                            <div class="option-item">
+                                                <label class="checkbox-label small">
+                                                    <input type="checkbox" id="scriptEnableEndBoard" checked onchange="handleScriptVideoOptionChange('scriptEnableEndBoard', this.checked)">
+                                                    <span class="checkmark"></span>
+                                                    尾板
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <button class="btn btn-primary" onclick="startProduction()">开始制作</button>
                                 </div>
                             </div>
@@ -1249,9 +1286,9 @@
                         <!-- 音色选择 -->
                         <div class="voice-selection">
                             <div class="voice-tabs">
-                                <button class="voice-tab active" onclick="switchVoiceTab('global')">全局</button>
-                                <button class="voice-tab" onclick="switchVoiceTab('switch')">切换</button>
-                                <button class="voice-tab" onclick="switchVoiceTab('dialect')">方言</button>
+                                <button class="voice-tab active" onclick="switchVoiceTab('male')">男性</button>
+                                <button class="voice-tab" onclick="switchVoiceTab('female')">女性</button>
+                                <button class="voice-tab" onclick="switchVoiceTab('neutral')">中性</button>
                             </div>
                             <div class="voice-grid" id="voiceGrid">
                                 <!-- 音色选项将在这里动态生成 -->
@@ -1274,6 +1311,41 @@
                                     <span class="slider-value" id="toneVolumeValue">85%</span>
                                 </div>
                             </div>
+                            
+                            <!-- 视频生成选项 -->
+                            <div class="video-options">
+                                <div class="options-title">生成选项</div>
+                                <div class="options-grid">
+                                    <div class="option-item">
+                                        <label class="checkbox-label small">
+                                            <input type="checkbox" id="enableSubtitles" checked onchange="handleVideoOptionChange('enableSubtitles', this.checked)">
+                                            <span class="checkmark"></span>
+                                            字幕
+                                        </label>
+                                    </div>
+                                    <div class="option-item">
+                                        <label class="checkbox-label small">
+                                            <input type="checkbox" id="enableBGM" checked onchange="handleVideoOptionChange('enableBGM', this.checked)">
+                                            <span class="checkmark"></span>
+                                            BGM
+                                        </label>
+                                    </div>
+                                    <div class="option-item">
+                                        <label class="checkbox-label small">
+                                            <input type="checkbox" id="enableFlowerText" checked onchange="handleVideoOptionChange('enableFlowerText', this.checked)">
+                                            <span class="checkmark"></span>
+                                            四要素
+                                        </label>
+                                    </div>
+                                    <div class="option-item">
+                                        <label class="checkbox-label small">
+                                            <input type="checkbox" id="enableEndBoard" checked onchange="handleVideoOptionChange('enableEndBoard', this.checked)">
+                                            <span class="checkmark"></span>
+                                            尾板
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1282,9 +1354,13 @@
                 <div class="editor-video-preview">
                     <div class="video-player-container">
                         <video id="editorVideoPlayer" controls preload="metadata">
-                            <source src="https://www.w3school.com.cn/i/movie.mp4" type="video/mp4">
+                            <source src="https://12131231-1302391623.cos.ap-beijing.myqcloud.com/VIP%E8%87%AAAAI%E7%88%86%E4%B8%B8%E6%8A%A4%E8%82%A4%E5%A5%970161%2B%E7%AB%96%E7%89%88%E8%A7%86%E9%A2%91%2B%E4%B8%B8%E7%BE%8E%2B%E7%BE%8E%E5%AE%B9%E6%8A%A4%E8%82%A4%2B6917920520629265102%2BAIGC%2B3.mp4" type="video/mp4">
                             您的浏览器不支持视频播放。
                         </video>
+                        <!-- 字幕覆盖层 -->
+                        <div id="subtitleOverlay" style="display:none;" class="video-subtitle-overlay">正在为您展示商品亮点，清爽透气，柔软亲肤</div>
+                        <!-- 四要素覆盖层（价格图片） -->
+                        <img id="fourElementsOverlay" style="display:none;" class="video-price-overlay" src="https://12131231-1302391623.cos.ap-beijing.myqcloud.com/%E4%BB%B7%E6%A0%BC%E6%A0%87%E5%9B%BE%E7%89%87.png" alt="价格信息">
                     </div>
                 </div>
             </div>
