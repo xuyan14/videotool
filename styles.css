@@ -5716,6 +5716,17 @@ body {
     align-items: center;
 }
 
+.bgm-option-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.option-sub-item {
+    margin-left: 22px;
+    margin-top: 6px;
+}
+
 .checkbox-label.small {
     font-size: 12px;
     font-weight: 400;
@@ -5733,6 +5744,33 @@ body {
     top: 1px;
     width: 4px;
     height: 8px;
+}
+
+/* 圆形选项框样式 */
+.checkmark.circular {
+    border-radius: 50% !important;
+    width: 14px;
+    height: 14px;
+}
+
+/* 覆盖原有的勾选标记样式，使用圆形中心点 */
+.checkbox-label input[type="checkbox"]:checked + .checkmark.circular::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) !important;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: white;
+    border: none !important;
+    border-width: 0 !important;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark.circular {
+    background-color: #007bff;
+    border-color: #007bff;
 }
 
 /* 内联视频生成选项样式 */

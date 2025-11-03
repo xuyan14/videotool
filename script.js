@@ -5138,6 +5138,7 @@ function handleVideoOptionChange(optionName, isEnabled) {
     const optionNames = {
         'enableSubtitles': '字幕',
         'enableBGM': 'BGM',
+        'enableChangeBGM': '更换BGM',
         'enableFlowerText': '四要素',
         'enableEndBoard': '尾板'
     };
