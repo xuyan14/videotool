@@ -2818,6 +2818,7 @@ function generateMaterialData() {
     const brands = ['Olay', 'SK-II', '兰蔻', '雅诗兰黛', '资生堂'];
     const statuses = ['draft', 'enabled', 'disabled', 'deleted'];
     const fileTypes = ['MP4', 'AVI', 'MOV', 'WMV'];
+    const videoTypes = ['internal', 'proxy'];
     const oaAccounts = ['david01.chen', 'alice.wang', 'bob.zhang', 'carol.li'];
     
     // 视频封面图片数组
@@ -2837,6 +2838,7 @@ function generateMaterialData() {
             materialName: `素材${i}`,
             status: statuses[Math.floor(Math.random() * statuses.length)],
             fileType: fileTypes[Math.floor(Math.random() * fileTypes.length)],
+            videoType: videoTypes[Math.floor(Math.random() * videoTypes.length)],
             uploadTime: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
             uploadOA: oaAccounts[Math.floor(Math.random() * oaAccounts.length)],
             thumbnail: videoThumbnails[Math.floor(Math.random() * videoThumbnails.length)],
@@ -2875,6 +2877,7 @@ function renderMaterialTable(materials) {
             <td>${material.materialName}</td>
             <td><span class="status-tag status-${material.status}">${getStatusText(material.status)}</span></td>
             <td>${material.fileType}</td>
+            <td>${getVideoTypeText(material.videoType)}</td>
             <td>${formatDate(material.uploadTime)}</td>
             <td>${material.uploadOA}</td>
             <td class="row-actions">
@@ -2922,6 +2925,15 @@ function getStatusText(status) {
         'deleted': '删除'
     };
     return statusMap[status] || status;
+}
+
+// 获取视频类型文本
+function getVideoTypeText(videoType) {
+    const typeMap = {
+        'internal': '内部镜头',
+        'proxy': '代理视频'
+    };
+    return typeMap[videoType] || '内部镜头';
 }
 
 // 格式化日期
@@ -3124,6 +3136,7 @@ function submitUpload() {
     const productId = document.getElementById('uploadProductId').value.trim();
     const batch = document.getElementById('uploadBatch').value.trim();
     const enableStatus = document.querySelector('input[name="enableStatus"]:checked').value;
+    const videoType = document.querySelector('input[name="videoType"]:checked').value;
     const uploadList = document.getElementById('uploadList');
     
     if (!productId) {

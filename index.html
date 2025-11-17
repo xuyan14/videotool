@@ -992,6 +992,14 @@
                         <label>上传OA</label>
                         <input type="text" class="filter-input" placeholder="请输入上传OA">
                     </div>
+                    <div class="filter-item">
+                        <label>视频类型</label>
+                        <select class="filter-select" id="videoTypeFilter">
+                            <option value="">全部</option>
+                            <option value="internal">内部镜头</option>
+                            <option value="proxy">代理视频</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="filter-actions">
                     <button class="btn btn-primary" onclick="searchMaterials()">查询</button>
@@ -1026,6 +1034,7 @@
                                 <th>素材名称</th>
                                 <th>素材状态</th>
                                 <th>文件类型</th>
+                                <th>视频类型</th>
                                 <th>上传时间</th>
                                 <th>上传OA</th>
                                 <th class="actions-column">操作</th>
@@ -1119,6 +1128,21 @@
                         <div class="form-item">
                             <label>批次 *</label>
                             <input type="number" id="uploadBatch" placeholder="请输入批次号" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>视频类型 *</label>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="videoType" value="internal" checked>
+                                    <span>内部镜头</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="videoType" value="proxy">
+                                    <span>代理视频</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
