@@ -11,11 +11,38 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeScriptList();
     initializeAIModel();
     initializeEditorPreviewOverlays();
+    initializeAutomationMode();
 });
 
 // 当前步骤
 let currentStep = 1;
 const totalSteps = 4;
+window.currentProductionMode = window.currentProductionMode || 'manual';
+const mockTaskCoverUrl = 'https://h2.appsimg.com/a.appsimg.com/upload/merchandise/pdcvis/102824/2026/0414/158/35a89d90-188a-4205-8ddf-20a8cee3c252.jpg';
+const editorSegmentPreviewUrl = 'https://h2.appsimg.com/a.appsimg.com/upload/merchandise/pdcvis/102824/2026/0211/47/b8f189d2-8131-43ef-9873-ffc738bb6afd_750x8000_85.jpg!85.webp';
+const demoScriptText = '跑步想要轻松，这双运动鞋千万要码住。唯品会大牌好货每天3折疯抢。这双安踏跑步鞋3.5折起，新用户可领至高25元券。双层中底能消化冲击，落地平稳保护膝盖，网眼排气满足慢跑。点击链接赶紧下单吧';
+const demoSellingPointText = '双层中底设计消化冲击，落地平稳从而保护膝盖，网眼排气孔设计满足日常慢跑的透气需求';
+
+// BGM 库
+var bgmLibraryData = [
+    { id: 1, audioName: '我要验牌.mp3', songName: 'nonAbsolute_male_dynamic_我要验牌', creator: '13800138000', category: '运动户外', size: '704KB', createdAt: '2026-05-18 10:50' },
+    { id: 2, audioName: 'Peach.mp3', songName: '', creator: '13800138001', category: '服装鞋帽', size: '737KB', createdAt: '2026-05-18 10:48' },
+    { id: 3, audioName: '真爱假说DJ.mp3', songName: '真爱假说', creator: '13800138002', category: '服装鞋帽', size: '812KB', createdAt: '2026-05-17 16:22' },
+    { id: 4, audioName: 'Online Message.mp3', songName: 'Online Message', creator: '13800138003', category: '家居生活', size: '690KB', createdAt: '2026-05-17 14:10' },
+    { id: 5, audioName: '葡萄熟了_新疆民谣女声.娃洗干净.mp3', songName: '葡萄熟了', creator: '13800138004', category: '家居生活', size: '1.2MB', createdAt: '2026-05-16 11:35' },
+    { id: 6, audioName: 'Hey, Mickey!.mp3', songName: 'Hey Mickey', creator: '13800138005', category: '运动户外', size: '756KB', createdAt: '2026-05-16 09:18' },
+    { id: 7, audioName: 'Send It.mp3', songName: 'Send It', creator: '13800138006', category: '运动户外', size: '668KB', createdAt: '2026-05-15 18:42' },
+    { id: 8, audioName: '爱我别走.mp3', songName: '爱我别走', creator: '13800138007', category: '美妆护肤', size: '801KB', createdAt: '2026-05-15 15:06' },
+    { id: 9, audioName: '动感节奏01.mp3', songName: '动感节奏01', creator: '13800138008', category: '运动户外', size: '720KB', createdAt: '2026-05-14 12:30' },
+    { id: 10, audioName: '温柔女声02.mp3', songName: '温柔女声02', creator: '13800138009', category: '美妆护肤', size: '695KB', createdAt: '2026-05-14 10:15' },
+    { id: 11, audioName: '大促氛围BGM.mp3', songName: '3折疯抢氛围', creator: '13800138010', category: '服装鞋帽', size: '880KB', createdAt: '2026-05-13 17:20' },
+    { id: 12, audioName: '跑步轻快版.mp3', songName: '跑步轻快版', creator: '13800138011', category: '运动户外', size: '745KB', createdAt: '2026-05-13 09:45' }
+];
+var selectedBgmId = null;
+var currentBgmPage = 1;
+var bgmPageSize = 8;
+var bgmFilterState = { audioName: '', songName: '', creator: '', category: '', startDate: '', endDate: '' };
+var playingBgmId = null;
 
 // 视频替换相关变量
 var currentReplaceSegmentIndex = -1;
@@ -1155,6 +1182,7 @@ function createTasksWithDefaultVoice() {
             status: 'completed', // 直接设置为完成状态
             progress: 100,
             createdAt: new Date(),
+            productionMode: '人工模式',
             script: script.content,
             voice: selectedVoiceTone, // 使用当前选择的音色
             scriptSource: scriptSource, // 脚本来源
@@ -1202,11 +1230,11 @@ function createTasksWithDefaultVoice() {
 function generateVideoThumbnail(scriptContent) {
     // 根据脚本内容生成不同的缩略图
     const thumbnails = [
-        'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png',
-        'https://youke1.picui.cn/s1/2025/08/25/68abd1330b651.png',
-        'https://youke1.picui.cn/s1/2025/08/25/68abd13504421.jpg',
-        'https://youke1.picui.cn/s1/2025/08/25/68abd13484aea.png',
-        'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png'
+        mockTaskCoverUrl,
+        mockTaskCoverUrl,
+        mockTaskCoverUrl,
+        mockTaskCoverUrl,
+        mockTaskCoverUrl
     ];
     
     // 根据脚本内容哈希选择缩略图
@@ -1504,12 +1532,15 @@ function createMaterialCard(title, imageSrc) {
 }
 
 // 全选功能
-document.getElementById('selectAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.material-card input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = this.checked;
+const selectAllCheckbox = document.getElementById('selectAll');
+if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.material-card input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
     });
-});
+}
 
 // 键盘快捷键
 document.addEventListener('keydown', function(e) {
@@ -1656,6 +1687,7 @@ function confirmVoiceSelection() {
             status: 'processing',
             progress: 0,
             createdAt: new Date(),
+            productionMode: '人工模式',
             script: script.content,
             voice: window.selectedVoice
         };
@@ -1697,19 +1729,37 @@ function confirmVoiceSelection() {
 }
 
 // 任务抽屉相关函数
-function openTaskDrawer() {
+function openTaskDrawer(tasksToShow) {
     const drawer = document.getElementById('taskDrawer');
     const overlay = document.getElementById('taskDrawerOverlay');
     
     drawer.classList.add('open');
     drawer.classList.remove('minimized');
     overlay.classList.add('show');
+
+    window.automationState = window.automationState || {};
+    if (Array.isArray(tasksToShow)) {
+        window.automationState.latestBatchTaskIds = tasksToShow.map(task => task.id);
+        updateTaskDrawer(tasksToShow);
+    } else {
+        window.automationState.latestBatchTaskIds = null;
+        updateTaskDrawer();
+    }
     
-    // 只在第一次打开时更新任务列表
-    updateTaskDrawer();
-    
-    // 添加ESC键监听
     document.addEventListener('keydown', handleTaskDrawerKeydown);
+}
+
+function getAutomationBatchTasksForDrawer() {
+    const ids = window.automationState?.latestBatchTaskIds;
+    if (!ids?.length || !window.taskManager) return null;
+
+    const idSet = new Set(ids.map(id => String(id)));
+    return window.taskManager.tasks.filter(task => idSet.has(String(task.id)));
+}
+
+function updateAutomationBatchTaskDrawer() {
+    const batchTasks = getAutomationBatchTasksForDrawer();
+    updateTaskDrawer(batchTasks || window.taskManager.tasks);
 }
 
 function closeTaskDrawer() {
@@ -1756,27 +1806,20 @@ function updateTaskDrawer(tasks = null) {
     const taskList = document.getElementById('drawerTaskList');
     if (!taskList || !window.taskManager) return;
     
-    // 检查是否已经初始化过
-    const isInitialized = taskList.hasAttribute('data-initialized');
+    taskList.innerHTML = '';
+    const tasksToShow = tasks || window.taskManager.tasks;
     
-    if (!isInitialized) {
-        taskList.innerHTML = '';
-        taskList.setAttribute('data-initialized', 'true');
+    tasksToShow.forEach((task, index) => {
+        const taskItem = createTaskItem(task, index + 1);
+        taskList.appendChild(taskItem);
         
-        const tasksToShow = tasks || window.taskManager.tasks;
-        
-        tasksToShow.forEach((task, index) => {
-            const taskItem = createTaskItem(task, index + 1);
-            taskList.appendChild(taskItem);
-            
-            // 如果是已完成的任务，生成视频网格
-            if (task.status === 'completed') {
-                setTimeout(() => {
-                    generateVideoGrid(task.id);
-                }, 100);
-            }
-        });
-    }
+        // 如果是已完成的任务，生成视频网格
+        if (task.status === 'completed') {
+            setTimeout(() => {
+                generateVideoGrid(task.id);
+            }, 100);
+        }
+    });
 }
 
 function createTaskItem(task, taskNumber) {
@@ -1787,26 +1830,22 @@ function createTaskItem(task, taskNumber) {
     
     const timeAgo = getTimeAgo(task.createdAt);
     const scriptPreview = task.script ? task.script.substring(0, 50) + '...' : '';
+    const createdTime = formatTaskDateTime(task.createdAt);
+    const updatedTime = formatTaskDateTime(task.updatedAt || new Date());
     
     // 检查任务状态，决定是否显示子任务状态
     let shouldShowSubTasks = false;
-    let overallStatus = '';
+    const productionMode = task.productionMode || (window.currentProductionMode === 'automation' ? '批量模式' : '人工模式');
+    const modeClass = productionMode === '批量模式' ? 'automation' : 'manual';
+    const modeBadge = `<span class="task-mode-badge ${modeClass}">${productionMode}</span>`;
     
-    if (task.subTasks && task.subTasks.length > 0) {
+    const displayVideos = getTaskVideosForDisplay(task);
+    const hasVideoSlots = displayVideos.length > 0;
+
+    if (!hasVideoSlots && task.subTasks && task.subTasks.length > 0) {
         const hasProcessing = task.subTasks.some(subTask => subTask.status === 'processing');
-        const allCompleted = task.subTasks.every(subTask => subTask.status === 'completed');
-        const hasFailed = task.subTasks.some(subTask => subTask.status === 'failed');
-        
-        // 只有当存在进行中的任务时才显示子任务状态
         if (hasProcessing) {
             shouldShowSubTasks = true;
-        } else if (allCompleted || hasFailed) {
-            // 所有任务完成或存在失败时，显示整体状态
-            if (allCompleted) {
-                overallStatus = '<span class="task-overall-status success">✅ 任务成功</span>';
-            } else if (hasFailed) {
-                overallStatus = '<span class="task-overall-status failed">❌ 任务失败</span>';
-            }
         }
     }
     
@@ -1824,28 +1863,59 @@ function createTaskItem(task, taskNumber) {
     
     // 移除操作按钮，只保留任务名称点击功能
     
-    // 视频预览区域
-    const videoPreviewHtml = task.status === 'completed' ? `
-        <div class="video-preview-section">
-            <div class="video-grid" id="videoGrid-${task.id}">
-                <!-- 视频网格将在这里动态生成 -->
-            </div>
+    const productMetaHtml = task.productId ? `
+        <div class="task-product-meta">
+            商品ID：${task.productId} · 共 ${displayVideos.length} 条视频${task.status === 'processing' ? '生产中' : ''}
         </div>
     ` : '';
+
+    const videoPreviewHtml = hasVideoSlots ? `
+        <div class="task-video-results">
+            ${displayVideos.map(video => renderTaskVideoCard(video, task)).join('')}
+        </div>
+    ` : '';
+
+    const progressValue = typeof task.progress === 'number' ? Math.round(task.progress) : (task.status === 'completed' ? 100 : 0);
+    const progressHtml = `
+        <div class="task-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${progressValue}%"></div>
+            </div>
+            <div class="progress-text">
+                <span>${task.stage || getStatusText(task.status)}</span>
+                <span>${progressValue}%</span>
+            </div>
+        </div>
+    `;
     
     taskItem.innerHTML = `
         <div class="task-meta">
             <h4 class="task-title" onclick="viewTask(${task.id})" style="cursor: pointer;">
                 ${task.id}-${task.title}
-                ${overallStatus}
+                ${modeBadge}
             </h4>
             <span class="task-time">${timeAgo}</span>
         </div>
+        ${productMetaHtml}
         ${videoPreviewHtml}
+        ${task.status === 'completed' ? '' : progressHtml}
         ${subTasksHtml}
+        <div class="task-footer-meta">
+            <div>任务提交时间：${createdTime}</div>
+            <div>任务最后修改时间：${updatedTime}</div>
+            <div>创建人：${task.creator || 'yuri.hu'}</div>
+        </div>
     `;
     
     return taskItem;
+}
+
+function formatTaskDateTime(date) {
+    const value = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(value.getTime())) return '-';
+
+    const pad = number => String(number).padStart(2, '0');
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())} ${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(value.getSeconds())}`;
 }
 
 // 生成视频网格
@@ -1952,6 +2022,7 @@ function saveToVideoLibrary(taskId) {
 }
 
 function editVideo(taskId) {
+    window.currentEditorTaskId = taskId;
     const task = window.taskManager.tasks.find(t => t.id == taskId);
     if (task) {
         showMessage(`跳转到视频编辑页面：${task.title}`, 'info');
@@ -1984,6 +2055,13 @@ function closeVideoEditor() {
 
 // 初始化视频编辑页面
 function initializeVideoEditor(taskId) {
+    const task = window.taskManager?.tasks.find(t => t.id == taskId);
+    const scriptText = document.getElementById('scriptText');
+
+    if (task && scriptText && task.script) {
+        scriptText.value = task.script;
+    }
+
     // 初始化音色选择
     initializeVoiceGrid();
     
@@ -1997,22 +2075,56 @@ function initializeVideoEditor(taskId) {
     updateCharacterCount();
 }
 
-// 初始化音色网格
-function initializeVoiceGrid() {
-    const voiceGrid = document.getElementById('voiceGrid');
-    const voices = [
-        { name: '柔和女声', desc: '温柔细腻', duration: '48s' },
-        { name: '磁性男声', desc: '低沉有力', duration: '52s' },
-        { name: '活力少年', desc: '青春阳光', duration: '45s' },
-        { name: '知性女声', desc: '优雅知性', duration: '50s' },
-        { name: '可爱童声', desc: '天真活泼', duration: '42s' },
+function getTaskSellingPoints(task) {
+    if (Array.isArray(task.sellingPoints) && task.sellingPoints.length > 0) {
+        return task.sellingPoints;
+    }
+    if (task.modelConfig?.sellingPoints?.length) {
+        return task.modelConfig.sellingPoints;
+    }
+    if (task.reviewConfig?.sellingPoints?.length) {
+        return task.reviewConfig.sellingPoints;
+    }
+    return [demoSellingPointText];
+}
+
+function parseSellingPoints(value) {
+    return value
+        .split(/[、,，\n]/)
+        .map(item => item.trim())
+        .filter(Boolean);
+}
+
+const editorVoiceGroups = {
+    male: [
         { name: '成熟男声', desc: '稳重专业', duration: '55s' },
-        { name: '甜美女生', desc: '甜美动人', duration: '46s' },
-        { name: '商务男声', desc: '专业商务', duration: '53s' }
-    ];
-    
+        { name: '青年男声', desc: '活力阳光', duration: '48s' },
+        { name: '磁性男声', desc: '低沉魅力', duration: '52s' }
+    ],
+    female: [
+        { name: '甜美女生', desc: '温柔可爱', duration: '46s' },
+        { name: '知性女声', desc: '优雅知性', duration: '50s' },
+        { name: '活力女声', desc: '青春活泼', duration: '45s' }
+    ],
+    neutral: [
+        { name: '中性音色', desc: '平衡自然', duration: '47s' },
+        { name: '温和音色', desc: '温和亲切', duration: '49s' },
+        { name: '专业音色', desc: '专业标准', duration: '51s' }
+    ]
+};
+
+// 初始化音色网格
+function initializeVoiceGrid(group = 'female') {
+    switchVoiceTab(group, false);
+}
+
+function renderEditorVoiceGrid(group) {
+    const voiceGrid = document.getElementById('voiceGrid');
+    if (!voiceGrid) return;
+
+    const voices = editorVoiceGroups[group] || editorVoiceGroups.female;
     voiceGrid.innerHTML = voices.map((voice, index) => `
-        <div class="voice-option ${index === 0 ? 'selected' : ''}" onclick="selectVoiceOption(${index})">
+        <div class="voice-option ${index === 0 ? 'selected' : ''}" onclick="selectVoiceOption('${group}', ${index})">
             <div class="voice-info">
                 <div class="voice-name">${voice.name}</div>
                 <div class="voice-desc">${voice.desc}</div>
@@ -2023,79 +2135,50 @@ function initializeVoiceGrid() {
 }
 
 // 选择音色选项
-function selectVoiceOption(index) {
+function selectVoiceOption(group, index) {
+    const voices = editorVoiceGroups[group] || editorVoiceGroups.female;
+    const selectedVoice = voices[index];
+    if (!selectedVoice) return;
+
     const voiceOptions = document.querySelectorAll('.voice-option');
     voiceOptions.forEach((option, i) => {
         option.classList.toggle('selected', i === index);
     });
-    
-    showMessage(`已选择音色：${voiceOptions[index].querySelector('.voice-name').textContent}`, 'success');
+
+    window.selectedVoiceTone = selectedVoice.name;
+    selectedVoiceTone = selectedVoice.name;
+    showMessage(`已选择音色：${selectedVoice.name}`, 'success');
 }
 
 // 切换音色标签页
-function switchVoiceTab(tab) {
+function switchVoiceTab(tab, shouldNotify = true) {
     const tabs = document.querySelectorAll('.voice-tab');
-    tabs.forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    // 根据性别类型显示不同的音色选项
-    const voiceGrid = document.getElementById('voiceGrid');
-    if (voiceGrid) {
-        let voiceOptions = [];
-        switch(tab) {
-            case 'male':
-                voiceOptions = [
-                    { name: '成熟男声', description: '稳重专业' },
-                    { name: '青年男声', description: '活力阳光' },
-                    { name: '磁性男声', description: '低沉魅力' }
-                ];
-                break;
-            case 'female':
-                voiceOptions = [
-                    { name: '甜美女生', description: '温柔可爱' },
-                    { name: '知性女声', description: '优雅知性' },
-                    { name: '活力女声', description: '青春活泼' }
-                ];
-                break;
-            case 'neutral':
-                voiceOptions = [
-                    { name: '中性音色', description: '平衡自然' },
-                    { name: '温和音色', description: '温和亲切' },
-                    { name: '专业音色', description: '专业标准' }
-                ];
-                break;
-        }
-        
-        // 渲染音色选项
-        voiceGrid.innerHTML = voiceOptions.map((voice, index) => `
-            <div class="voice-option" onclick="selectVoice(${index})">
-                <div class="voice-name">${voice.name}</div>
-                <div class="voice-desc">${voice.description}</div>
-            </div>
-        `).join('');
+    tabs.forEach(t => {
+        const tabText = t.textContent.trim();
+        const isActive =
+            (tab === 'male' && tabText === '男性') ||
+            (tab === 'female' && tabText === '女性') ||
+            (tab === 'neutral' && tabText === '中性');
+        t.classList.toggle('active', isActive);
+    });
+
+    renderEditorVoiceGrid(tab);
+
+    const firstVoice = (editorVoiceGroups[tab] || editorVoiceGroups.female)[0];
+    if (firstVoice) {
+        window.selectedVoiceTone = firstVoice.name;
+        selectedVoiceTone = firstVoice.name;
     }
-    
-    showMessage(`切换到${event.target.textContent}音色`, 'info');
+
+    if (shouldNotify) {
+        const labelMap = { male: '男性', female: '女性', neutral: '中性' };
+        showMessage(`切换到${labelMap[tab] || '女性'}音色`, 'info');
+    }
 }
 
 // 初始化音色配置
 function initializeVoiceSelection() {
-    // 默认显示女性音色选项
-    const voiceGrid = document.getElementById('voiceGrid');
-    if (voiceGrid) {
-        const femaleVoices = [
-            { name: '甜美女生', description: '温柔可爱' },
-            { name: '知性女声', description: '优雅知性' },
-            { name: '活力女声', description: '青春活泼' }
-        ];
-        
-        voiceGrid.innerHTML = femaleVoices.map((voice, index) => `
-            <div class="voice-option" onclick="selectVoice(${index})">
-                <div class="voice-name">${voice.name}</div>
-                <div class="voice-desc">${voice.description}</div>
-            </div>
-        `).join('');
-    }
+    initializeVoiceGrid('female');
 }
 
 // 更新字符计数
@@ -2118,12 +2201,6 @@ function updateToneVolume() {
     const slider = document.getElementById('toneVolume');
     const value = document.getElementById('toneVolumeValue');
     value.textContent = slider.value + '%';
-}
-
-
-// 保存到草稿
-function saveToDraft() {
-    showMessage('已保存到草稿', 'success');
 }
 
 // 发布视频
@@ -2160,10 +2237,10 @@ function initializeEditorVideoPlayer() {
 function initializeTimeline() {
     const timelineTrack = document.getElementById('timelineTrack');
     const segments = [
-        { id: 1, thumbnail: 'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png' },
-        { id: 2, thumbnail: 'https://youke1.picui.cn/s1/2025/08/25/68abd1330b651.png' },
-        { id: 3, thumbnail: 'https://youke1.picui.cn/s1/2025/08/25/68abd13504421.jpg' },
-        { id: 4, thumbnail: 'https://youke1.picui.cn/s1/2025/08/25/68abd13484aea.png' }
+        { id: 1, thumbnail: editorSegmentPreviewUrl },
+        { id: 2, thumbnail: editorSegmentPreviewUrl },
+        { id: 3, thumbnail: editorSegmentPreviewUrl },
+        { id: 4, thumbnail: editorSegmentPreviewUrl }
     ];
     
     timelineTrack.innerHTML = segments.map((segment, index) => `
@@ -2303,12 +2380,6 @@ function formatTime(seconds) {
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
-
-// 保存到草稿
-function saveToDraft() {
-    showMessage('已保存到草稿', 'success');
-}
-
 // 发布视频
 function publishVideo() {
     showMessage('视频发布成功！', 'success');
@@ -3305,6 +3376,145 @@ function downloadVideo(taskId) {
     }
 }
 
+function createTaskVideoSlots(count, status = 'processing', baseProgress = 8) {
+    const parsed = parseInt(String(count).replace(/\D/g, ''), 10);
+    const total = Math.min(10, Math.max(1, Number.isNaN(parsed) ? 1 : parsed));
+    return Array.from({ length: total }, (_, index) => ({
+        id: index + 1,
+        title: `视频${index + 1}`,
+        status,
+        progress: status === 'completed' ? 100 : Math.max(5, baseProgress - index * 2),
+        thumbnail: mockTaskCoverUrl,
+        duration: status === 'completed' ? '15S' : '--',
+        fileSize: status === 'completed' ? '2.8MB' : '--',
+        scriptSource: 'AI脚本'
+    }));
+}
+
+function createTaskVideoSlotsFromScripts(scripts, status = 'processing', baseProgress = 8) {
+    const list = (scripts || []).filter(Boolean);
+    const total = Math.max(1, list.length);
+    return list.map((script, index) => ({
+        id: index + 1,
+        title: `视频${index + 1}`,
+        script,
+        status,
+        progress: status === 'completed' ? 100 : Math.max(5, baseProgress - index * 2),
+        thumbnail: mockTaskCoverUrl,
+        duration: status === 'completed' ? '15S' : '--',
+        fileSize: status === 'completed' ? '2.8MB' : '--',
+        scriptSource: '人工脚本'
+    }));
+}
+
+function getTaskVideosForDisplay(task) {
+    if (task.videos?.length) return task.videos;
+    if (task.videoCount) {
+        return createTaskVideoSlots(task.videoCount, task.status === 'completed' ? 'completed' : 'processing', task.progress || 8);
+    }
+    if (task.status === 'completed') {
+        return generateTaskVideos(task).slice(0, task.videoCount || 1);
+    }
+    return [];
+}
+
+function finalizeAutomationTask(task) {
+    if (!task) return;
+
+    task.status = 'completed';
+    task.stage = '任务成功';
+    task.progress = 100;
+    task.updatedAt = new Date();
+
+    if (task.videos?.length) {
+        task.videos.forEach((video, index) => {
+            video.status = 'completed';
+            video.progress = 100;
+            if (!video.duration || video.duration === '--') video.duration = '15S';
+            if (!video.fileSize || video.fileSize === '--') video.fileSize = '2.8MB';
+            if (!video.script && task.scripts?.[index]) video.script = task.scripts[index];
+            if (!video.thumbnail) video.thumbnail = mockTaskCoverUrl;
+        });
+    }
+
+    if (task.subTasks?.length) {
+        task.subTasks.forEach(subTask => {
+            subTask.status = 'completed';
+        });
+    }
+}
+
+function updateAutomationTaskVideos(task, stage) {
+    if (!task.videos?.length) return;
+
+    if (stage.status === 'completed') {
+        task.videos.forEach(video => {
+            video.status = 'completed';
+            video.progress = 100;
+            video.duration = '15S';
+            video.fileSize = '2.8MB';
+        });
+        return;
+    }
+
+    task.videos.forEach(video => {
+        video.status = 'processing';
+        video.progress = Math.min(95, Math.max(8, stage.progress + (video.id % 3) * 2));
+        video.duration = '--';
+        video.fileSize = '--';
+    });
+}
+
+function renderTaskVideoCard(video, task) {
+    const isCompleted = video.status === 'completed' || task.status === 'completed';
+    const statusClass = isCompleted ? 'success' : 'processing';
+    const statusIcon = isCompleted ? 'fa-check-circle' : 'fa-spinner fa-spin';
+    const statusText = isCompleted ? '任务成功' : '生产中';
+    const progress = typeof video.progress === 'number' ? Math.round(video.progress) : 0;
+
+    const overlayHtml = isCompleted ? `
+        <div class="task-video-mask">
+            <button type="button" title="保存" onclick="saveToVideoLibrary('${task.id}')">
+                <i class="fas fa-save"></i>
+            </button>
+            <button type="button" title="编辑" onclick="editVideo('${task.id}')">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button type="button" title="预览" onclick="openVideoPreview('${task.id}')">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button type="button" title="复制">
+                <i class="fas fa-copy"></i>
+            </button>
+        </div>
+    ` : `
+        <div class="task-video-loading">
+            <div class="task-video-mini-progress">
+                <div class="task-video-mini-progress-fill" style="width: ${progress}%"></div>
+            </div>
+            <span>${progress}%</span>
+        </div>
+    `;
+
+    return `
+        <div class="task-video-card ${isCompleted ? '' : 'is-processing'}">
+            <div class="task-video-status ${statusClass}">
+                <i class="fas ${statusIcon}"></i>
+                ${statusText}
+            </div>
+            <div class="task-video-cover-wrap">
+                <img src="${video.thumbnail || mockTaskCoverUrl}" alt="${task.title}" class="task-video-cover">
+                ${overlayHtml}
+            </div>
+            <div class="task-video-script">${video.script || task.script || video.title || task.title}</div>
+            <div class="task-video-meta">
+                <span>${video.duration || task.videoDuration || '--'}</span>
+                <span>${video.fileSize || task.videoFileSize || '--'}</span>
+            </div>
+        </div>
+    `;
+}
+
 // 生成任务视频数据
 function generateTaskVideos(task) {
     const baseTitle = task.title;
@@ -3312,15 +3522,14 @@ function generateTaskVideos(task) {
     
     // 视频封面链接数组
     const videoThumbnails = [
-        'https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png',
-        'https://youke1.picui.cn/s1/2025/08/25/68abd1330b651.png',
-        'https://youke1.picui.cn/s1/2025/08/25/68abd13504421.jpg',
-        'https://youke1.picui.cn/s1/2025/08/25/68abd13484aea.png'
+        mockTaskCoverUrl,
+        mockTaskCoverUrl,
+        mockTaskCoverUrl,
+        mockTaskCoverUrl
     ];
     
-    // 使用任务ID作为种子，确保同一个任务总是生成相同数量的视频
     const seed = task.id || 1;
-    const videoCount = (seed % 5) + 1; // 1-5个视频，基于任务ID确定
+    const videoCount = task.videoCount || ((seed % 5) + 1);
     const videos = [];
     
     for (let i = 0; i < videoCount; i++) {
@@ -3853,51 +4062,78 @@ function loadSampleTasks() {
     console.log('开始加载示例任务');
     const sampleTasks = [
         {
-            id: '6921298477540574538',
-            title: '儿童纯棉百搭小清新碎花上衣',
-            description: '儿童纯棉百搭小清新碎花上衣',
-            status: 'processing',
-            progress: 65,
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2小时前
-            script: '大家好，今天给大家推荐一款超美的连衣裙...',
+            id: 'BFKQ77CW-6920689926607786454',
+            title: '【Palermo】男女同款经典复古T头德训鞋休闲鞋板鞋-视频制作任务',
+            description: 'PUMA Palermo 复古德训鞋视频制作任务',
+            status: 'completed',
+            progress: 100,
+            createdAt: new Date('2026-05-22T17:20:52'),
+            updatedAt: new Date('2026-05-22T18:01:29'),
+            creator: 'yuri.hu',
+            sellingPoints: [demoSellingPointText],
+            script: demoScriptText,
+            videoCount: 1,
+            videos: [
+                {
+                    thumbnail: mockTaskCoverUrl,
+                    duration: '23.07 秒',
+                    fileSize: '27.92 MB'
+                }
+            ],
             subTasks: [
-                { id: 'NO.1', status: 'completed' },
-                { id: 'NO.2', status: 'failed' },
-                { id: 'NO.3', status: 'processing' },
-                { id: 'NO.4', status: 'processing' },
-                { id: 'NO.5', status: 'processing' }
+                { id: 'No.1', status: 'completed' }
             ]
         },
         {
-            id: '6921346563316532949',
-            title: '夏季T恤视频制作',
-            description: '夏季T恤视频制作',
+            id: 'BGTBBC3K-6920689926607786454',
+            title: '【Palermo】男女同款经典复古T头德训鞋休闲鞋板鞋-视频制作任务',
+            description: 'PUMA Palermo 爆款脚本复刻视频制作任务',
             status: 'completed',
             progress: 100,
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1天前
-            script: '姐妹们看过来！这款T恤真的是绝了...',
+            createdAt: new Date('2026-05-22T11:42:46'),
+            updatedAt: new Date('2026-05-22T18:08:41'),
+            creator: 'T00048891',
+            sellingPoints: [demoSellingPointText],
+            script: demoScriptText,
+            videoCount: 2,
+            videos: [
+                {
+                    thumbnail: mockTaskCoverUrl,
+                    duration: '29.6 秒',
+                    fileSize: '36.36 MB'
+                },
+                {
+                    thumbnail: mockTaskCoverUrl,
+                    duration: '18.4 秒',
+                    fileSize: '22.18 MB'
+                }
+            ],
             subTasks: [
-                { id: 'NO.1', status: 'completed' },
-                { id: 'NO.2', status: 'completed' },
-                { id: 'NO.3', status: 'completed' },
-                { id: 'NO.4', status: 'completed' },
-                { id: 'NO.5', status: 'completed' }
+                { id: 'No.1', status: 'completed' },
+                { id: 'No.2', status: 'completed' }
             ]
         },
         {
-            id: '6921346563316532950',
-            title: '时尚连衣裙视频制作',
-            description: '时尚连衣裙视频制作',
+            id: 'BHHY9ND2-6920810386380828624',
+            title: '儿童纯棉百搭小清新碎花上衣-视频制作任务',
+            description: '儿童纯棉碎花上衣视频制作任务',
             status: 'completed',
             progress: 100,
-            createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12小时前
-            script: '今天给大家分享一款超级好穿的连衣裙...',
+            createdAt: new Date('2026-05-23T09:18:12'),
+            updatedAt: new Date('2026-05-23T09:42:36'),
+            creator: 'david01.chen',
+            sellingPoints: [demoSellingPointText],
+            script: demoScriptText,
+            videoCount: 1,
+            videos: [
+                {
+                    thumbnail: mockTaskCoverUrl,
+                    duration: '16.8 秒',
+                    fileSize: '19.64 MB'
+                }
+            ],
             subTasks: [
-                { id: 'NO.1', status: 'completed' },
-                { id: 'NO.2', status: 'completed' },
-                { id: 'NO.3', status: 'completed' },
-                { id: 'NO.4', status: 'completed' },
-                { id: 'NO.5', status: 'completed' }
+                { id: 'No.1', status: 'completed' }
             ]
         }
     ];
@@ -3933,9 +4169,18 @@ function resetTaskSearch() {
 
 // 更新任务计数显示
 function updateTaskCount(count) {
+    const actualCount = typeof count === 'number'
+        ? count
+        : (window.taskManager?.tasks?.length || 0);
     const taskCountText = document.getElementById('taskCountText');
     if (taskCountText) {
-        taskCountText.textContent = `共为您找到 ${count} 个相关的任务`;
+        taskCountText.textContent = `共为您找到 ${actualCount} 个相关的任务`;
+    }
+
+    const taskCount = document.getElementById('taskCount');
+    if (taskCount && window.taskManager?.tasks) {
+        const processingTasks = window.taskManager.tasks.filter(task => task.status === 'processing').length;
+        taskCount.textContent = processingTasks;
     }
 }
 
@@ -4084,7 +4329,9 @@ function submitVideoChanges() {
             status: 'processing',
             progress: 0,
             createdAt: new Date(),
+            productionMode: window.currentProductionMode === 'automation' ? '批量模式' : '人工模式',
             script: document.getElementById('scriptText')?.value || '',
+            sellingPoints: getTaskSellingPoints(window.taskManager?.tasks.find(t => t.id == window.currentEditorTaskId) || {}),
             voice: window.selectedVoiceTone || '甜美女生',
             scriptSource: 'AI脚本',
             videoThumbnail: 'https://youke1.picui.cn/s1/2025/08/25/68abd1330b651.png',
@@ -4116,10 +4363,13 @@ function submitVideoChanges() {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化任务管理器
-    window.taskManager = {
-        tasks: []
-    };
+    // 保留前面 initializeTaskManagement() 已加载的示例任务，避免重复初始化时清空任务列表
+    if (!window.taskManager) {
+        window.taskManager = {
+            tasks: [],
+            nextId: 1
+        };
+    }
     
     // 初始化选中的脚本
     window.selectedScripts = [];
@@ -5151,7 +5401,6 @@ function handleVideoOptionChange(optionName, isEnabled) {
     const optionNames = {
         'enableSubtitles': '字幕',
         'enableBGM': 'BGM',
-        'enableChangeBGM': '更换BGM',
         'enableFlowerText': '四要素',
         'enableEndBoard': '尾板'
     };
@@ -5213,3 +5462,1181 @@ function getScriptTemplatesByWordCount(wordCountRange) {
     
     return templates[wordCountRange] || templates['50-75'];
 }
+
+// ===== 批量模式相关函数 =====
+
+const AUTOMATION_DEFAULT_SCRIPT_COUNT = 3;
+
+function initializeAutomationMode() {
+    if (!window.automationState) {
+        window.automationState = {
+            batchNo: 0,
+            jobs: [],
+            selectedJobId: null,
+            productRowSeq: 0
+        };
+    }
+    initAutomationProductForm();
+    renderAutomationDashboard();
+}
+
+function initAutomationProductForm() {
+    const container = document.getElementById('automationProductRows');
+    if (!container) return;
+
+    if (!container.children.length) {
+        addAutomationProductRow();
+    }
+    updateAutomationInputHint();
+}
+
+function addAutomationProductRow(productId = '', scripts = null) {
+    const container = document.getElementById('automationProductRows');
+    if (!container) return;
+
+    window.automationState = window.automationState || { productRowSeq: 0 };
+    const rowId = ++window.automationState.productRowSeq;
+    const row = document.createElement('div');
+    row.className = 'automation-product-row';
+    row.dataset.rowId = String(rowId);
+
+    const scriptValues = Array.isArray(scripts) && scripts.length
+        ? scripts
+        : Array.from({ length: AUTOMATION_DEFAULT_SCRIPT_COUNT }, (_, i) => (i === 0 ? demoScriptText : ''));
+
+    row.innerHTML = `
+        <div class="automation-product-row-header">
+            <div class="field-grow">
+                <label>商品 ID</label>
+                <div class="automation-product-id-row">
+                    <input type="text" class="automation-product-id-input" placeholder="请输入商品 ID" value="${escapeAttribute(productId)}">
+                    <button type="button" class="btn btn-outline btn-sm automation-ai-generate-btn" onclick="generateAutomationScriptsForRow(this)">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        AI脚本生成
+                    </button>
+                </div>
+            </div>
+            <button type="button" class="automation-product-remove" title="删除该商品" onclick="removeAutomationProductRow(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+        <div class="automation-scripts-block">
+            <div class="automation-scripts-header">
+                <label>脚本文案（${scriptValues.length} 条，可继续添加）</label>
+            </div>
+            <p class="automation-scripts-tip">AI 生成条数与下方输入框数量一致；生成后可自行修改，或单条点击「重新生成」。</p>
+            <div class="automation-script-list"></div>
+            <button type="button" class="automation-add-script-btn" onclick="addAutomationScriptField(this)">
+                <i class="fas fa-plus"></i>
+                添加脚本
+            </button>
+        </div>
+    `;
+
+    const scriptList = row.querySelector('.automation-script-list');
+    scriptValues.forEach((text, index) => {
+        scriptList.appendChild(createAutomationScriptFieldElement(text, index + 1));
+    });
+
+    container.appendChild(row);
+    bindAutomationFormEvents(row);
+    updateAutomationInputHint();
+}
+
+function createAutomationScriptFieldElement(value = '', index = 1) {
+    const item = document.createElement('div');
+    item.className = 'automation-script-item';
+    item.innerHTML = `
+        <span class="automation-script-index">脚本 ${index}</span>
+        <div class="automation-script-editor-wrap">
+            <textarea class="automation-script-input" placeholder="请输入该条视频脚本文案，或使用 AI 脚本生成">${escapeHtml(value)}</textarea>
+            <div class="automation-script-item-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="regenerateAutomationScriptField(this)">重新生成</button>
+            </div>
+        </div>
+        <button type="button" class="automation-script-remove" title="删除脚本" onclick="removeAutomationScriptField(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    return item;
+}
+
+function getAutomationAiScripts(productId, count) {
+    const shortId = productId ? productId.slice(-6) : '商品';
+    const templates = [
+        demoScriptText,
+        `跑步想要轻松，这双运动鞋千万要码住。唯品会大牌好货每天3折疯抢，商品ID ${shortId} 同款3.5折起，新用户可领至高25元券。双层中底护膝，网眼透气，点击链接赶紧下单吧`,
+        `姐妹们注意了，${shortId} 这款跑鞋正在唯品会疯抢！中底减震落地稳，日常慢跑不闷脚，叠加新人券更划算，喜欢跑步的别错过。`,
+        `每天慢跑的姐妹看过来，这双鞋真的舒服。唯品会3折起，双层中底消化冲击，网眼排气孔透气，现在下单还有优惠券，链接在下面。`,
+        `这双运动鞋我穿了一周真的推荐：护膝、透气、脚感稳。唯品会限时特惠，新用户领券再减，商品 ${shortId} 同款链接已放好。`
+    ];
+
+    return Array.from({ length: Math.max(1, count) }, (_, index) => templates[index % templates.length]);
+}
+
+function generateAutomationScriptsForRow(triggerBtn) {
+    const row = triggerBtn?.closest('.automation-product-row');
+    if (!row) return;
+
+    const productId = row.querySelector('.automation-product-id-input')?.value.trim();
+    if (!productId) {
+        showMessage('请先填写商品 ID，再使用 AI 脚本生成', 'warning');
+        return;
+    }
+
+    const inputs = [...row.querySelectorAll('.automation-script-input')];
+    if (!inputs.length) {
+        showMessage('请先添加至少 1 个脚本输入框', 'warning');
+        return;
+    }
+
+    const btn = triggerBtn;
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+    showMessage(`正在为商品 ${productId} 生成 ${inputs.length} 条 AI 脚本...`, 'info');
+
+    setTimeout(() => {
+        const scripts = getAutomationAiScripts(productId, inputs.length);
+        inputs.forEach((input, index) => {
+            input.value = scripts[index] || demoScriptText;
+            input.dataset.aiGenerated = '1';
+        });
+
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        showMessage(`已生成 ${inputs.length} 条 AI 脚本，可继续编辑或单条重新生成`, 'success');
+        updateAutomationInputHint();
+    }, 1200);
+}
+
+function regenerateAutomationScriptField(triggerBtn) {
+    const row = triggerBtn?.closest('.automation-product-row');
+    const item = triggerBtn?.closest('.automation-script-item');
+    const input = item?.querySelector('.automation-script-input');
+    if (!row || !input) return;
+
+    const productId = row.querySelector('.automation-product-id-input')?.value.trim();
+    if (!productId) {
+        showMessage('请先填写商品 ID', 'warning');
+        return;
+    }
+
+    const inputs = [...row.querySelectorAll('.automation-script-input')];
+    const scriptIndex = inputs.indexOf(input);
+    const btn = triggerBtn;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+
+    setTimeout(() => {
+        const pool = getAutomationAiScripts(productId, Math.max(inputs.length, scriptIndex + 3));
+        input.value = pool[(scriptIndex + 1) % pool.length] || demoScriptText;
+        input.dataset.aiGenerated = '1';
+        btn.disabled = false;
+        btn.textContent = originalText;
+        showMessage(`脚本 ${scriptIndex + 1} 已重新生成`, 'success');
+        updateAutomationInputHint();
+    }, 800);
+}
+
+function addAutomationScriptField(triggerBtn) {
+    const row = triggerBtn?.closest('.automation-product-row');
+    if (!row) return;
+
+    const scriptList = row.querySelector('.automation-script-list');
+    if (!scriptList) return;
+
+    const index = scriptList.children.length + 1;
+    scriptList.appendChild(createAutomationScriptFieldElement('', index));
+    refreshAutomationScriptIndexes(row);
+    updateAutomationInputHint();
+}
+
+function removeAutomationScriptField(triggerBtn) {
+    const row = triggerBtn?.closest('.automation-product-row');
+    const scriptList = row?.querySelector('.automation-script-list');
+    if (!scriptList) return;
+
+    if (scriptList.children.length <= 1) {
+        showMessage('每个商品至少保留 1 条脚本', 'warning');
+        return;
+    }
+
+    triggerBtn.closest('.automation-script-item')?.remove();
+    refreshAutomationScriptIndexes(row);
+    updateAutomationInputHint();
+}
+
+function removeAutomationProductRow(triggerBtn) {
+    const container = document.getElementById('automationProductRows');
+    const rows = container?.querySelectorAll('.automation-product-row') || [];
+    if (rows.length <= 1) {
+        showMessage('至少保留 1 个商品配置', 'warning');
+        return;
+    }
+
+    triggerBtn?.closest('.automation-product-row')?.remove();
+    updateAutomationInputHint();
+}
+
+function refreshAutomationScriptIndexes(row) {
+    const scriptItems = row.querySelectorAll('.automation-script-item');
+    scriptItems.forEach((item, index) => {
+        const label = item.querySelector('.automation-script-index');
+        if (label) label.textContent = `脚本 ${index + 1}`;
+    });
+
+    const headerLabel = row.querySelector('.automation-scripts-header > label');
+    if (headerLabel) {
+        headerLabel.textContent = `脚本文案（${scriptItems.length} 条，可继续添加）`;
+    }
+}
+
+function bindAutomationFormEvents(scope = document) {
+    scope.querySelectorAll('.automation-product-id-input, .automation-script-input').forEach(el => {
+        if (el.dataset.bound === '1') return;
+        el.dataset.bound = '1';
+        el.addEventListener('input', updateAutomationInputHint);
+    });
+}
+
+function triggerAutomationExcelUpload() {
+    const input = document.getElementById('automationExcelInput');
+    if (!input) return;
+    input.value = '';
+    input.click();
+}
+
+function normalizeExcelHeaderCell(value) {
+    return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/_/g, '');
+}
+
+function parseAutomationExcelSheet(rows) {
+    if (!Array.isArray(rows) || !rows.length) return [];
+
+    const normalizedRows = rows
+        .map(row => (Array.isArray(row) ? row : Object.values(row)).map(cell => String(cell ?? '').trim()))
+        .filter(row => row.some(cell => cell));
+
+    if (!normalizedRows.length) return [];
+
+    const header = normalizedRows[0].map(normalizeExcelHeaderCell);
+    const hasHeader = header.some(cell => cell.includes('商品id') || cell === 'id' || cell.includes('productid'))
+        && header.some(cell => cell.includes('脚本') || cell.includes('script') || cell.includes('文案'));
+
+    let startIndex = 0;
+    let idCol = 0;
+    let scriptCol = 1;
+
+    if (hasHeader) {
+        startIndex = 1;
+        const idIndex = header.findIndex(cell => cell.includes('商品id') || cell === 'id' || cell.includes('productid'));
+        const scriptIndex = header.findIndex(cell => cell.includes('脚本') || cell.includes('script') || cell.includes('文案'));
+        idCol = idIndex >= 0 ? idIndex : 0;
+        scriptCol = scriptIndex >= 0 ? scriptIndex : (idCol === 0 ? 1 : 0);
+    }
+
+    const grouped = new Map();
+    normalizedRows.slice(startIndex).forEach(row => {
+        const productId = String(row[idCol] ?? '').trim();
+        const script = String(row[scriptCol] ?? '').trim();
+        if (!productId || !script) return;
+
+        if (!grouped.has(productId)) {
+            grouped.set(productId, []);
+        }
+        grouped.get(productId).push(script);
+    });
+
+    return [...grouped.entries()].map(([productId, scripts]) => ({ productId, scripts }));
+}
+
+function applyAutomationExcelConfig(items) {
+    const container = document.getElementById('automationProductRows');
+    if (!container) return;
+
+    container.innerHTML = '';
+    items.forEach(({ productId, scripts }) => {
+        addAutomationProductRow(productId, scripts);
+    });
+    updateAutomationInputHint();
+}
+
+function handleAutomationExcelUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (typeof XLSX === 'undefined') {
+        showMessage('Excel 解析组件未加载，请刷新页面后重试', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+        try {
+            const data = new Uint8Array(loadEvent.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            const items = parseAutomationExcelSheet(rows);
+
+            if (!items.length) {
+                showMessage('未识别到有效数据，请确认 Excel 包含「商品ID」「脚本」两列', 'warning');
+                return;
+            }
+
+            applyAutomationExcelConfig(items);
+            const scriptCount = items.reduce((sum, item) => sum + item.scripts.length, 0);
+            showMessage(`已从 Excel 导入 ${items.length} 个商品，共 ${scriptCount} 条脚本`, 'success');
+        } catch (error) {
+            console.error('Excel parse failed:', error);
+            showMessage('Excel 解析失败，请使用与模板一致的两列结构', 'error');
+        } finally {
+            event.target.value = '';
+        }
+    };
+
+    reader.onerror = () => {
+        showMessage('Excel 文件读取失败', 'error');
+        event.target.value = '';
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+function collectAutomationBatchItems() {
+    const rows = document.querySelectorAll('#automationProductRows .automation-product-row');
+    const items = [];
+
+    rows.forEach(row => {
+        const productId = row.querySelector('.automation-product-id-input')?.value.trim();
+        if (!productId) return;
+
+        const scripts = [...row.querySelectorAll('.automation-script-input')]
+            .map(el => el.value.trim())
+            .filter(Boolean);
+
+        if (scripts.length) {
+            items.push({ productId, scripts });
+        }
+    });
+
+    return items;
+}
+
+function switchProductionMode(mode) {
+    const manualMode = document.getElementById('manualProductionMode');
+    const automationMode = document.getElementById('automationProductionMode');
+    const manualTab = document.getElementById('manualModeTab');
+    const automationTab = document.getElementById('automationModeTab');
+
+    if (!manualMode || !automationMode || !manualTab || !automationTab) return;
+
+    const isAutomation = mode === 'automation';
+    window.currentProductionMode = isAutomation ? 'automation' : 'manual';
+    manualMode.style.display = isAutomation ? 'none' : 'block';
+    automationMode.style.display = isAutomation ? 'flex' : 'none';
+    
+    [manualTab, automationTab].forEach(tab => {
+        tab.classList.remove('active');
+        tab.setAttribute('aria-selected', 'false');
+    });
+    
+    const activeTab = isAutomation ? automationTab : manualTab;
+    activeTab.classList.add('active');
+    activeTab.setAttribute('aria-selected', 'true');
+
+    if (isAutomation) {
+        initAutomationProductForm();
+    }
+
+    showMessage(isAutomation ? '已切换到批量模式' : '已切换到人工模式', 'info');
+}
+
+function getAutomationStrategy() {
+    return {
+        model: '后端自动选择',
+        goal: '基于人工前置脚本执行视频生产',
+        enableSubtitles: Boolean(document.getElementById('automationSubtitles')?.checked),
+        enableBGM: Boolean(document.getElementById('automationBGM')?.checked),
+        enableFlowerText: Boolean(document.getElementById('automationFlowerText')?.checked),
+        enableEndBoard: Boolean(document.getElementById('automationEndBoard')?.checked)
+    };
+}
+
+function startAutomationBatch() {
+    const batchItems = collectAutomationBatchItems();
+    const rows = document.querySelectorAll('#automationProductRows .automation-product-row');
+
+    if (!rows.length) {
+        showMessage('请先添加商品配置', 'warning');
+        return;
+    }
+
+    const missingIdRows = [...rows].filter(row => !row.querySelector('.automation-product-id-input')?.value.trim());
+    if (missingIdRows.length) {
+        showMessage('请为每个商品填写商品 ID', 'warning');
+        return;
+    }
+
+    if (!batchItems.length) {
+        showMessage('每个商品至少填写 1 条有效脚本文案', 'warning');
+        return;
+    }
+
+    const strategy = getAutomationStrategy();
+    window.automationState.batchNo += 1;
+    window.automationState.selectedJobId = null;
+    window.automationState.jobs = batchItems.map((item, index) => createAutomationJob(item.productId, index, strategy, item.scripts));
+
+    renderAutomationDashboard();
+    const createdTasks = createTaskManagerTasksFromAutomationJobs(window.automationState.jobs);
+    updateTaskCount(window.taskManager.tasks.length);
+    openTaskDrawer(createdTasks);
+
+    const totalVideos = batchItems.reduce((sum, item) => sum + item.scripts.length, 0);
+    createdTasks.forEach(finalizeAutomationTask);
+    window.automationState.jobs.forEach(job => {
+        job.status = 'review';
+        job.stage = '待审核';
+        job.progress = 100;
+    });
+
+    updateAutomationBatchTaskDrawer();
+    updateTaskCount(window.taskManager.tasks.length);
+    showMessage(`已提交：${createdTasks.length} 个商品任务，共 ${totalVideos} 条视频已完成`, 'success');
+}
+
+function createAutomationJob(productId, index, strategy, scripts = []) {
+    const productSamples = [
+        {
+            title: '儿童纯棉百搭小清新碎花上衣',
+            shortName: '儿童纯棉碎花上衣',
+            category: '服装鞋帽 > 女装 > 上衣',
+            sellingPoints: ['柔软亲肤', '透气不闷热', '荷叶领口', '纯棉面料'],
+            voice: '甜美女生'
+        },
+        {
+            title: '夏季轻薄百搭短袖 T 恤',
+            shortName: '夏季轻薄短袖T恤',
+            category: '服装鞋帽 > 男装 > T恤',
+            sellingPoints: ['轻薄透气', '百搭不挑人', '不易变形', '亲肤棉感'],
+            voice: '活力女声'
+        },
+        {
+            title: '赫本风气质波点连衣裙',
+            shortName: '赫本风波点裙',
+            category: '服装鞋帽 > 女装 > 连衣裙',
+            sellingPoints: ['显瘦版型', '复古波点', '通勤约会皆可', '垂感面料'],
+            voice: '甜美女生'
+        },
+        {
+            title: '高保湿修护精华面霜',
+            shortName: '修护保湿面霜',
+            category: '美妆护肤 > 护肤 > 面霜',
+            sellingPoints: ['长效保湿', '修护屏障', '清爽不黏腻', '敏感肌友好'],
+            voice: '温柔女声'
+        }
+    ];
+    const sample = productSamples[index % productSamples.length];
+    const confirmedScripts = (scripts || []).filter(Boolean);
+    const scriptList = confirmedScripts.length ? confirmedScripts : [demoScriptText];
+    const options = {
+        subtitles: strategy.enableSubtitles,
+        bgm: strategy.enableBGM,
+        flowerText: strategy.enableFlowerText,
+        endBoard: strategy.enableEndBoard
+    };
+
+    return {
+        id: `auto-${Date.now()}-${index}`,
+        productId,
+        title: sample.title,
+        shortName: sample.shortName,
+        category: sample.category,
+        status: 'processing',
+        stage: '商品识别中',
+        progress: 8,
+        confidence: Math.min(98, 86 + index * 3),
+        thumbnail: getAutomationThumbnail(index),
+        createdAt: new Date(),
+        strategy,
+        modelConfig: {
+            sellingPoints: [demoSellingPointText],
+            scripts: scriptList,
+            script: scriptList[0],
+            voice: sample.voice,
+            options
+        },
+        reviewConfig: {
+            sellingPoints: [demoSellingPointText],
+            scripts: [...scriptList],
+            script: scriptList[0],
+            voice: sample.voice,
+            options: { ...options }
+        },
+        modifiedFields: [],
+        reviewer: 'david01.chen'
+    };
+}
+
+function createTaskManagerTasksFromAutomationJobs(jobs) {
+    if (!window.taskManager) {
+        window.taskManager = { tasks: [], nextId: 1 };
+    }
+
+    const createdTasks = jobs.map((job) => {
+        const taskId = window.taskManager.nextId || Date.now();
+        window.taskManager.nextId = taskId + 1;
+        const scripts = job.modelConfig.scripts || [job.modelConfig.script].filter(Boolean);
+        const videoCount = scripts.length;
+
+        const task = {
+            id: taskId,
+            title: `商品 ${job.productId}`,
+            description: `商品ID：${job.productId}，共 ${videoCount} 条脚本`,
+            status: 'completed',
+            stage: '任务成功',
+            progress: 100,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            productionMode: '批量模式',
+            script: scripts[0],
+            scripts,
+            voice: job.modelConfig.voice,
+            sellingPoints: [...job.modelConfig.sellingPoints],
+            scriptSource: '人工前置脚本',
+            productId: job.productId,
+            videoCount,
+            videos: createTaskVideoSlotsFromScripts(scripts, 'completed', 100),
+            videoThumbnail: job.thumbnail,
+            videoDuration: '15S',
+            videoFileSize: '2.8MB',
+            automationOptions: job.modelConfig.options,
+            subTasks: [
+                { id: '商品识别', status: 'completed' },
+                { id: '参数配置', status: 'completed' },
+                { id: '视频生产', status: 'completed' }
+            ]
+        };
+        return task;
+    });
+
+    window.taskManager.tasks.unshift(...createdTasks);
+    return createdTasks;
+}
+
+function simulateAutomationTaskProgress(taskId, index) {
+    const stages = [
+        { stage: '商品识别中', progress: 20, subTasks: ['processing', 'processing', 'processing'] },
+        { stage: '脚本校验与参数配置中', progress: 45, subTasks: ['completed', 'processing', 'processing'] },
+        { stage: '音色与素材匹配中', progress: 68, subTasks: ['completed', 'completed', 'processing'] },
+        { stage: '视频生产中', progress: 88, subTasks: ['completed', 'completed', 'processing'] },
+        { stage: '待审核', progress: 100, status: 'completed', subTasks: ['completed', 'completed', 'completed'] }
+    ];
+
+    stages.forEach((stage, stageIndex) => {
+        setTimeout(() => {
+            const task = window.taskManager?.tasks.find(item => item.id === taskId);
+            if (!task || task.status !== 'processing') return;
+
+            task.stage = stage.stage;
+            task.progress = stage.progress;
+            task.updatedAt = new Date();
+            updateAutomationTaskVideos(task, stage);
+            if (stage.status) task.status = stage.status;
+            if (task.subTasks && stage.subTasks) {
+                task.subTasks.forEach((subTask, subTaskIndex) => {
+                    subTask.status = stage.subTasks[subTaskIndex] || subTask.status;
+                });
+            }
+
+            updateAutomationBatchTaskDrawer();
+            updateTaskCount(window.taskManager.tasks.length);
+
+            if (stage.status === 'completed') {
+                showMessage(`${task.title} 已完成，进入待审核`, 'success');
+            }
+        }, 900 * (stageIndex + 1) + index * 280);
+    });
+}
+
+function getAutomationThumbnail(index) {
+    return mockTaskCoverUrl;
+}
+
+function simulateAutomationJob(jobId, index) {
+    const stages = [
+        { stage: '商品识别中', progress: 18 },
+        { stage: '卖点选择中', progress: 35 },
+        { stage: '脚本生成中', progress: 55 },
+        { stage: '音色与参数配置中', progress: 72 },
+        { stage: '视频生产中', progress: 90 },
+        { stage: '待审核', progress: 100, status: 'review' }
+    ];
+
+    stages.forEach((step, stepIndex) => {
+        setTimeout(() => {
+            const job = findAutomationJob(jobId);
+            if (!job || job.status !== 'processing') return;
+
+            job.stage = step.stage;
+            job.progress = step.progress;
+            if (step.status) job.status = step.status;
+            renderAutomationDashboard();
+
+            if (step.status === 'review' && !window.automationState.selectedJobId) {
+                selectAutomationJob(job.id);
+            }
+        }, 700 * (stepIndex + 1) + index * 260);
+    });
+}
+
+function findAutomationJob(jobId) {
+    return window.automationState?.jobs.find(job => job.id === jobId);
+}
+
+function renderAutomationDashboard() {
+    renderAutomationMetrics();
+    renderAutomationJobs();
+    renderAutomationReview();
+    updateAutomationInputHint();
+}
+
+function renderAutomationMetrics() {
+    const jobs = window.automationState?.jobs || [];
+    const setText = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    };
+
+    setText('automationTotalCount', jobs.length);
+    setText('automationReviewCount', jobs.filter(job => job.status === 'review').length);
+    setText('automationApprovedCount', jobs.filter(job => job.status === 'approved').length);
+    setText('automationRegeneratedCount', jobs.filter(job => job.status === 'regenerated').length);
+
+    const batchLabel = document.getElementById('automationBatchLabel');
+    if (batchLabel) {
+        batchLabel.textContent = window.automationState?.batchNo ? `批次 AUTO-${window.automationState.batchNo}` : '未启动';
+    }
+}
+
+function renderAutomationJobs() {
+    const list = document.getElementById('automationJobList');
+    const jobs = window.automationState?.jobs || [];
+    if (!list) return;
+
+    if (jobs.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-layer-group"></i>
+                <p>输入商品 ID 后开始自动生产，任务会显示在这里。</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = jobs.map(job => `
+        <div class="automation-job-card ${job.id === window.automationState.selectedJobId ? 'active' : ''}" onclick="selectAutomationJob('${job.id}')">
+            <div class="job-card-header">
+                <div>
+                    <div class="job-card-title">${job.title}</div>
+                    <div class="job-card-subtitle">${job.productId} · ${job.category}</div>
+                </div>
+                <span class="status-pill ${getAutomationStatusClass(job.status)}">${getAutomationStatusText(job.status)}</span>
+            </div>
+            <div class="automation-progress"><span style="width: ${job.progress}%"></span></div>
+            <div class="job-card-footer">
+                <span class="job-card-subtitle">${job.stage}</span>
+                <span class="confidence-score">模型置信度 ${job.confidence}%</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAutomationReview() {
+    const panel = document.getElementById('automationReviewPanel');
+    if (!panel) return;
+
+    const job = findAutomationJob(window.automationState?.selectedJobId);
+    if (!job) {
+        panel.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-clipboard-check"></i>
+                <p>选择一个批量任务，审核模型自主生成的配置与视频结果。</p>
+            </div>
+        `;
+        return;
+    }
+
+    const disabled = job.status === 'processing' ? 'disabled' : '';
+    const optionChecked = key => job.reviewConfig.options[key] ? 'checked' : '';
+
+    panel.innerHTML = `
+        <div class="review-header">
+            <div>
+                <span class="mode-eyebrow">审核工作台</span>
+                <h4>${job.title}</h4>
+                <p>${job.productId} · 基于 ${(job.reviewConfig.scripts || []).length} 条人工前置脚本进行视频生产。</p>
+            </div>
+            <span class="status-pill ${getAutomationStatusClass(job.status)}">${getAutomationStatusText(job.status)}</span>
+        </div>
+
+        <div class="review-content">
+            <div class="review-video-card">
+                <img src="${job.thumbnail}" alt="${job.title}">
+                <div class="review-video-meta">
+                    <h4>${job.shortName}</h4>
+                    <p>已确认 ${(job.reviewConfig.scripts || [job.reviewConfig.script]).filter(Boolean).length} 条人工脚本，系统基于脚本执行视频生产。</p>
+                    <div class="review-tags">
+                        ${job.modelConfig.sellingPoints.map(point => `<span class="review-tag">${point}</span>`).join('')}
+                    </div>
+                    <div class="config-diff">
+                        ${getAutomationDiffText(job)}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="review-form-grid">
+                    <div class="review-field">
+                        <label>商品简称</label>
+                        <input value="${escapeAttribute(job.shortName)}" disabled>
+                    </div>
+                    <div class="review-field">
+                        <label>音色</label>
+                        <select ${disabled} onchange="updateAutomationReviewField('${job.id}', 'voice', this.value)">
+                            ${['甜美女生', '活力女声', '温柔女声', '磁性男声'].map(voice => `<option value="${voice}" ${job.reviewConfig.voice === voice ? 'selected' : ''}>${voice}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="review-field full-width">
+                        <label>卖点，使用顿号分隔</label>
+                        <input ${disabled} value="${escapeAttribute(job.reviewConfig.sellingPoints.join('、'))}" onchange="updateAutomationReviewField('${job.id}', 'sellingPoints', this.value)">
+                    </div>
+                    <div class="review-field full-width">
+                        <label>已确认脚本（${(job.reviewConfig.scripts || []).length} 条）</label>
+                        <textarea ${disabled} readonly>${(job.reviewConfig.scripts || [job.reviewConfig.script]).map((s, i) => `【脚本${i + 1}】${s}`).join('\n\n')}</textarea>
+                    </div>
+                    <div class="review-field">
+                        <label>视频选项</label>
+                        <div class="automation-option-row">
+                            <label class="checkbox-label small">
+                                <input type="checkbox" ${disabled} ${optionChecked('subtitles')} onchange="updateAutomationReviewOption('${job.id}', 'subtitles', this.checked)">
+                                <span class="checkmark"></span>
+                                字幕
+                            </label>
+                            <label class="checkbox-label small">
+                                <input type="checkbox" ${disabled} ${optionChecked('bgm')} onchange="updateAutomationReviewOption('${job.id}', 'bgm', this.checked)">
+                                <span class="checkmark"></span>
+                                BGM
+                            </label>
+                            <label class="checkbox-label small">
+                                <input type="checkbox" ${disabled} ${optionChecked('flowerText')} onchange="updateAutomationReviewOption('${job.id}', 'flowerText', this.checked)">
+                                <span class="checkmark"></span>
+                                四要素
+                            </label>
+                            <label class="checkbox-label small">
+                                <input type="checkbox" ${disabled} ${optionChecked('endBoard')} onchange="updateAutomationReviewOption('${job.id}', 'endBoard', this.checked)">
+                                <span class="checkmark"></span>
+                                尾板
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-actions">
+                    <button class="btn btn-outline" ${job.status === 'processing' ? 'disabled' : ''} onclick="approveAutomationJob('${job.id}')">审核通过</button>
+                    <button class="btn btn-primary" ${job.status === 'processing' ? 'disabled' : ''} onclick="regenerateAutomationJob('${job.id}')">
+                        <i class="fas fa-redo"></i>
+                        修改后重新生成
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function selectAutomationJob(jobId) {
+    window.automationState.selectedJobId = jobId;
+    renderAutomationDashboard();
+}
+
+function updateAutomationReviewField(jobId, field, value) {
+    const job = findAutomationJob(jobId);
+    if (!job) return;
+
+    if (field === 'sellingPoints') {
+        job.reviewConfig.sellingPoints = value.split(/[、,，]/).map(item => item.trim()).filter(Boolean);
+    } else {
+        job.reviewConfig[field] = value;
+    }
+
+    markAutomationDiff(job);
+    renderAutomationDashboard();
+}
+
+function updateAutomationReviewOption(jobId, option, value) {
+    const job = findAutomationJob(jobId);
+    if (!job) return;
+
+    job.reviewConfig.options[option] = value;
+    markAutomationDiff(job);
+    renderAutomationDashboard();
+}
+
+function markAutomationDiff(job) {
+    const modifiedFields = [];
+    if (job.reviewConfig.voice !== job.modelConfig.voice) modifiedFields.push('音色');
+    const modelScripts = (job.modelConfig.scripts || [job.modelConfig.script]).join('|');
+    const reviewScripts = (job.reviewConfig.scripts || [job.reviewConfig.script]).join('|');
+    if (modelScripts !== reviewScripts) modifiedFields.push('脚本');
+    if (job.reviewConfig.sellingPoints.join('|') !== job.modelConfig.sellingPoints.join('|')) modifiedFields.push('卖点');
+
+    const optionNames = {
+        subtitles: '字幕',
+        bgm: 'BGM',
+        flowerText: '四要素',
+        endBoard: '尾板'
+    };
+
+    Object.keys(optionNames).forEach(key => {
+        if (job.reviewConfig.options[key] !== job.modelConfig.options[key]) {
+            modifiedFields.push(optionNames[key]);
+        }
+    });
+
+    job.modifiedFields = modifiedFields;
+}
+
+function approveAutomationJob(jobId) {
+    const job = findAutomationJob(jobId);
+    if (!job || job.status === 'processing') return;
+
+    job.status = 'approved';
+    job.stage = '审核通过';
+    job.progress = 100;
+    renderAutomationDashboard();
+    showMessage(`${job.shortName} 已审核通过`, 'success');
+}
+
+function regenerateAutomationJob(jobId) {
+    const job = findAutomationJob(jobId);
+    if (!job || job.status === 'processing') return;
+
+    markAutomationDiff(job);
+    job.status = 'regenerated';
+    job.stage = '已提交重新生成';
+    job.progress = 100;
+    job.regeneratedAt = new Date();
+
+    if (!window.taskManager) {
+        window.taskManager = { tasks: [], nextId: 1 };
+    }
+
+    const scripts = job.reviewConfig.scripts || [job.reviewConfig.script].filter(Boolean);
+    const taskId = window.taskManager.nextId || Date.now();
+    window.taskManager.nextId = taskId + 1;
+    const reworkTask = {
+        id: taskId,
+        title: `商品 ${job.productId} 批量返工`,
+        description: `人工修改字段：${job.modifiedFields.length ? job.modifiedFields.join('、') : '无'}`,
+        status: 'completed',
+        stage: '任务成功',
+        progress: 100,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        productionMode: '批量模式',
+        productId: job.productId,
+        script: scripts[0],
+        scripts,
+        voice: job.reviewConfig.voice,
+        scriptSource: '批量模式-人工审核',
+        videoCount: scripts.length,
+        videos: createTaskVideoSlotsFromScripts(scripts, 'completed', 100),
+        videoThumbnail: job.thumbnail,
+        videoDuration: '15S',
+        videoFileSize: '2.8MB',
+        subTasks: [
+            { id: '商品识别', status: 'processing' },
+            { id: '参数配置', status: 'processing' },
+            { id: '视频生产', status: 'processing' }
+        ]
+    };
+    window.taskManager.tasks.unshift(reworkTask);
+
+    finalizeAutomationTask(reworkTask);
+    window.automationState.latestBatchTaskIds = [taskId];
+    resetTaskDrawerRender();
+    openTaskDrawer([reworkTask]);
+    updateTaskCount(window.taskManager.tasks.length);
+    renderAutomationDashboard();
+    showMessage(`${job.shortName} 已基于审核配置重新生成`, 'success');
+}
+
+function resetTaskDrawerRender() {
+    const taskList = document.getElementById('drawerTaskList');
+    if (!taskList) return;
+
+    taskList.removeAttribute('data-initialized');
+    taskList.innerHTML = '';
+}
+
+function getAutomationStatusText(status) {
+    const statusMap = {
+        processing: '自动生产中',
+        review: '待审核',
+        approved: '已通过',
+        regenerated: '已返工'
+    };
+    return statusMap[status] || status;
+}
+
+function getAutomationStatusClass(status) {
+    const classMap = {
+        processing: 'status-processing',
+        review: 'status-review',
+        approved: 'status-approved',
+        regenerated: 'status-regenerated'
+    };
+    return classMap[status] || 'status-processing';
+}
+
+function getAutomationDiffText(job) {
+    if (job.status === 'processing') {
+        return '模型正在自动配置中，完成后可进入审核。';
+    }
+
+    if (!job.modifiedFields || job.modifiedFields.length === 0) {
+        return '暂无人工修改。通过或返工后，后端可记录模型配置与人工配置差异。';
+    }
+
+    return `已修改：${job.modifiedFields.join('、')}。这些差异可回流给模型团队优化自动决策。`;
+}
+
+function updateAutomationInputHint() {
+    const hint = document.getElementById('automationInputHint');
+    if (!hint) return;
+
+    const items = collectAutomationBatchItems();
+    const productRows = document.querySelectorAll('#automationProductRows .automation-product-row').length;
+    const totalScripts = items.reduce((sum, item) => sum + item.scripts.length, 0);
+
+    if (!productRows) {
+        hint.textContent = '请至少添加 1 个商品并填写脚本';
+    } else if (!items.length) {
+        hint.textContent = `已添加 ${productRows} 个商品，请填写商品 ID 与至少 1 条脚本`;
+    } else {
+        hint.textContent = `已配置 ${items.length} 个商品，共 ${totalScripts} 条脚本（视频条数随脚本数）`;
+    }
+}
+
+function escapeAttribute(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function openBgmLibrary() {
+    const modal = document.getElementById('bgmLibraryModal');
+    if (!modal) return;
+
+    if (!document.getElementById('enableBGM')?.checked) {
+        const enableBgm = document.getElementById('enableBGM');
+        if (enableBgm) enableBgm.checked = true;
+    }
+
+    modal.style.display = 'flex';
+    currentBgmPage = 1;
+    renderBgmLibraryGrid();
+}
+
+function closeBgmLibrary() {
+    const modal = document.getElementById('bgmLibraryModal');
+    if (modal) modal.style.display = 'none';
+    playingBgmId = null;
+}
+
+function getFilteredBgmList() {
+    return bgmLibraryData.filter(item => {
+        if (bgmFilterState.audioName && !item.audioName.toLowerCase().includes(bgmFilterState.audioName.toLowerCase())) return false;
+        if (bgmFilterState.songName) {
+            const song = item.songName || '';
+            if (!song.toLowerCase().includes(bgmFilterState.songName.toLowerCase())) return false;
+        }
+        if (bgmFilterState.creator && !item.creator.includes(bgmFilterState.creator)) return false;
+        if (bgmFilterState.category && item.category !== bgmFilterState.category) return false;
+        if (bgmFilterState.startDate) {
+            const itemDate = item.createdAt.slice(0, 10);
+            if (itemDate < bgmFilterState.startDate) return false;
+        }
+        if (bgmFilterState.endDate) {
+            const itemDate = item.createdAt.slice(0, 10);
+            if (itemDate > bgmFilterState.endDate) return false;
+        }
+        return true;
+    });
+}
+
+function renderBgmLibraryGrid() {
+    const grid = document.getElementById('bgmGrid');
+    const countText = document.getElementById('bgmCountText');
+    const paginationControls = document.getElementById('bgmPaginationControls');
+    if (!grid) return;
+
+    const filtered = getFilteredBgmList();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / bgmPageSize));
+    if (currentBgmPage > totalPages) currentBgmPage = totalPages;
+
+    const start = (currentBgmPage - 1) * bgmPageSize;
+    const pageData = filtered.slice(start, start + bgmPageSize);
+
+    if (countText) countText.textContent = `共${filtered.length}条`;
+
+    grid.innerHTML = pageData.map(item => {
+        const isSelected = selectedBgmId === item.id;
+        const isPlaying = playingBgmId === item.id;
+        const songDisplay = item.songName
+            ? `<span class="bgm-song-name">${escapeHtml(item.songName)}</span>`
+            : `<span class="bgm-song-placeholder">点击添加歌曲名称</span><i class="fas fa-pen bgm-song-edit-icon"></i>`;
+
+        return `
+            <div class="bgm-card ${isSelected ? 'selected' : ''}" onclick="selectBgmItem(${item.id}, event)">
+                <label class="bgm-card-checkbox" onclick="event.stopPropagation()">
+                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="selectBgmItem(${item.id}, event)">
+                </label>
+                <button type="button" class="bgm-play-btn ${isPlaying ? 'playing' : ''}" onclick="toggleBgmPreview(${item.id}, event)" title="试听">
+                    <i class="fas fa-${isPlaying ? 'pause' : 'play'}"></i>
+                </button>
+                <div class="bgm-card-body">
+                    <div class="bgm-audio-name" title="${escapeAttribute(item.audioName)}">${escapeHtml(item.audioName)}</div>
+                    <div class="bgm-song-row">${songDisplay}</div>
+                    <div class="bgm-card-meta">
+                        <span>--:--</span>
+                        <span>${escapeHtml(item.size)}</span>
+                        <span>${escapeHtml(item.createdAt)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (paginationControls) {
+        let pagesHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            pagesHtml += `<button type="button" class="page-btn ${i === currentBgmPage ? 'active' : ''}" onclick="changeBgmPage(${i})">${i}</button>`;
+        }
+        paginationControls.innerHTML = pagesHtml;
+    }
+
+    const confirmBtn = document.getElementById('confirmBgmBtn');
+    if (confirmBtn) confirmBtn.disabled = !selectedBgmId;
+}
+
+function selectBgmItem(bgmId, event) {
+    if (event) event.stopPropagation();
+    selectedBgmId = bgmId;
+    renderBgmLibraryGrid();
+}
+
+function toggleBgmPreview(bgmId, event) {
+    if (event) event.stopPropagation();
+    const item = bgmLibraryData.find(b => b.id === bgmId);
+    if (!item) return;
+
+    if (playingBgmId === bgmId) {
+        playingBgmId = null;
+        showMessage(`已停止试听：${item.audioName}`, 'info');
+    } else {
+        playingBgmId = bgmId;
+        showMessage(`正在试听：${item.audioName}`, 'info');
+    }
+    renderBgmLibraryGrid();
+}
+
+function searchBgmLibrary() {
+    bgmFilterState = {
+        audioName: document.getElementById('bgmFilterAudioName')?.value.trim() || '',
+        songName: document.getElementById('bgmFilterSongName')?.value.trim() || '',
+        creator: document.getElementById('bgmFilterCreator')?.value.trim() || '',
+        category: document.getElementById('bgmFilterCategory')?.value || '',
+        startDate: document.getElementById('bgmFilterStartDate')?.value || '',
+        endDate: document.getElementById('bgmFilterEndDate')?.value || ''
+    };
+    currentBgmPage = 1;
+    renderBgmLibraryGrid();
+    showMessage('BGM 搜索完成', 'info');
+}
+
+function resetBgmLibraryFilters() {
+    ['bgmFilterAudioName', 'bgmFilterSongName', 'bgmFilterCreator', 'bgmFilterStartDate', 'bgmFilterEndDate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const categoryEl = document.getElementById('bgmFilterCategory');
+    if (categoryEl) categoryEl.value = '';
+    bgmFilterState = { audioName: '', songName: '', creator: '', category: '', startDate: '', endDate: '' };
+    currentBgmPage = 1;
+    renderBgmLibraryGrid();
+}
+
+function changeBgmPage(page) {
+    currentBgmPage = page;
+    renderBgmLibraryGrid();
+}
+
+function confirmBgmSelection() {
+    const selected = bgmLibraryData.find(item => item.id === selectedBgmId);
+    if (!selected) {
+        showMessage('请先选择 BGM', 'warning');
+        return;
+    }
+
+    const label = document.getElementById('selectedBgmLabel');
+    if (label) {
+        label.textContent = selected.songName || selected.audioName;
+        label.title = selected.audioName;
+    }
+
+    closeBgmLibrary();
+    showMessage(`已更换 BGM：${selected.audioName}`, 'success');
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// 兼容页面内联 onclick / onchange 调用。
+window.switchProductionMode = switchProductionMode;
+window.startAutomationBatch = startAutomationBatch;
+window.addAutomationProductRow = addAutomationProductRow;
+window.addAutomationScriptField = addAutomationScriptField;
+window.removeAutomationScriptField = removeAutomationScriptField;
+window.removeAutomationProductRow = removeAutomationProductRow;
+window.generateAutomationScriptsForRow = generateAutomationScriptsForRow;
+window.regenerateAutomationScriptField = regenerateAutomationScriptField;
+window.triggerAutomationExcelUpload = triggerAutomationExcelUpload;
+window.handleAutomationExcelUpload = handleAutomationExcelUpload;
+window.selectAutomationJob = selectAutomationJob;
+window.updateAutomationReviewField = updateAutomationReviewField;
+window.updateAutomationReviewOption = updateAutomationReviewOption;
+window.approveAutomationJob = approveAutomationJob;
+window.regenerateAutomationJob = regenerateAutomationJob;
+window.openBgmLibrary = openBgmLibrary;
+window.closeBgmLibrary = closeBgmLibrary;
+window.searchBgmLibrary = searchBgmLibrary;
+window.resetBgmLibraryFilters = resetBgmLibraryFilters;
+window.selectBgmItem = selectBgmItem;
+window.toggleBgmPreview = toggleBgmPreview;
+window.confirmBgmSelection = confirmBgmSelection;
+window.changeBgmPage = changeBgmPage;

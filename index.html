@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI视频工具 - 内容管理后台</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=automation-mode-43">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -110,8 +110,23 @@
 
             <!-- 主要内容 -->
             <div class="content">
-                <!-- 流程步骤指示器 -->
-                <div class="process-steps">
+                <!-- 生产模式切换 -->
+                <div class="production-mode-switch">
+                    <div class="mode-tabs">
+                        <button class="mode-tab active" id="manualModeTab" onclick="switchProductionMode('manual')">
+                            <i class="fas fa-user-edit"></i>
+                            人工模式
+                        </button>
+                        <button class="mode-tab" id="automationModeTab" onclick="switchProductionMode('automation')">
+                            <i class="fas fa-robot"></i>
+                            批量模式
+                        </button>
+                    </div>
+                </div>
+
+                <div id="manualProductionMode">
+                    <!-- 流程步骤指示器 -->
+                    <div class="process-steps">
                     <div class="step active" data-step="1">
                         <div class="step-number">1</div>
                         <div class="step-title">商品识别与卖点提炼</div>
@@ -128,10 +143,10 @@
                         <div class="step-number">4</div>
                         <div class="step-title">下载完成</div>
                     </div>
-                </div>
+                    </div>
 
-                <!-- 步骤1：商品识别与卖点提炼 -->
-                <div class="step-content active" id="step1">
+                    <!-- 步骤1：商品识别与卖点提炼 -->
+                    <div class="step-content active" id="step1">
                     <div class="step-header">
                         <h3>步骤1：商品识别与卖点提炼</h3>
                         <p>请输入商品ID或链接，系统将自动识别商品信息并生成卖点</p>
@@ -303,10 +318,10 @@
                     <div class="step1-actions" id="step1Actions" style="display: none;">
                         <button class="btn btn-primary" onclick="goToScriptGeneration()">下一步</button>
                     </div>
-                </div>
+                    </div>
 
-                <!-- 步骤2：脚本生成 -->
-                <div class="step-content" id="step2">
+                    <!-- 步骤2：脚本生成 -->
+                    <div class="step-content" id="step2">
                     <!-- 商品信息展示模块 -->
                     <div class="product-info-display" id="productInfoDisplay">
                         <div class="product-info-header">
@@ -746,6 +761,79 @@
                     </div>
                 </div>
 
+                </div>
+
+                <!-- 批量模式：商品 + 脚本前置配置 -->
+                <div id="automationProductionMode" class="automation-mode" style="display: none;">
+                    <div class="automation-hero">
+                        <div class="automation-hero-copy">
+                            <h3>批量配置商品 ID 与脚本文案</h3>
+                            <p>为每个商品填写 ID 与脚本文案（默认 3 条，可继续添加）；提交后系统基于已确认脚本执行视频生产，生产条数随脚本数量走。</p>
+                        </div>
+                    </div>
+
+                    <div class="automation-grid automation-grid-single">
+                        <section class="automation-panel automation-launch-panel">
+                            <div class="automation-product-rows-header">
+                                <h4>商品与脚本</h4>
+                                <div class="automation-product-rows-actions">
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="triggerAutomationExcelUpload()">
+                                        <i class="fas fa-file-excel"></i>
+                                        上传EXCEL
+                                    </button>
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="addAutomationProductRow()">
+                                        <i class="fas fa-plus"></i>
+                                        添加商品
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" id="automationExcelInput" class="automation-excel-input" accept=".xlsx,.xls" onchange="handleAutomationExcelUpload(event)">
+                            <p class="automation-excel-tip">Excel 需包含「商品ID」「脚本」两列；同一商品ID多行将自动合并为该商品下的多条脚本。</p>
+
+                            <div id="automationProductRows" class="automation-product-rows"></div>
+
+                            <div class="automation-global-options">
+                                <label>生成选项</label>
+                                <div class="automation-option-row">
+                                    <label class="checkbox-label small">
+                                        <input type="checkbox" id="automationSubtitles" checked>
+                                        <span class="checkmark"></span>
+                                        字幕
+                                    </label>
+                                    <label class="checkbox-label small">
+                                        <input type="checkbox" id="automationBGM" checked>
+                                        <span class="checkmark"></span>
+                                        BGM
+                                    </label>
+                                    <label class="checkbox-label small">
+                                        <input type="checkbox" id="automationFlowerText" checked>
+                                        <span class="checkmark"></span>
+                                        四要素
+                                    </label>
+                                    <label class="checkbox-label small">
+                                        <input type="checkbox" id="automationEndBoard" checked>
+                                        <span class="checkmark"></span>
+                                        尾板
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="automation-launch-note">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <span>脚本由人工前置确认；提交后自动完成商品识别、音色与视频参数配置及视频生产。</span>
+                            </div>
+
+                            <div class="automation-actions">
+                                <button class="btn btn-primary" onclick="startAutomationBatch()">
+                                    <i class="fas fa-paper-plane"></i>
+                                    提交并开始生产
+                                </button>
+                                <span id="automationInputHint">请至少添加 1 个商品并填写脚本</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
 
             </div>
         </div>
@@ -801,7 +889,7 @@
     <!-- 任务抽屉 -->
     <div id="taskDrawer" class="task-drawer">
         <div class="drawer-header">
-            <h3>任务列表</h3>
+            <h3>视频任务列表</h3>
             <div class="drawer-close-actions">
                 <button class="drawer-minimize" onclick="minimizeTaskDrawer()" title="最小化">
                     <i class="fas fa-minus"></i>
@@ -1280,7 +1368,6 @@
                 </div>
                 <div class="editor-actions">
                     <button class="btn btn-primary" onclick="submitVideoChanges()">提交修改</button>
-                    <button class="btn btn-outline" onclick="saveToDraft()">保存到草稿</button>
                     <button class="btn btn-secondary" onclick="closeVideoEditor()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -1297,13 +1384,13 @@
                 <div class="editor-control-panel">
                     <div class="control-section">
                         <h4>视频优化</h4>
-                        
+
                         <!-- 文本编辑区域 -->
                         <div class="text-editor">
-                            <label>文案</label>
-                            <textarea id="scriptText" placeholder="请输入视频文案..." oninput="updateCharacterCount()">夏日赫本风波点裙，清新优雅的设计风格，让你在炎炎夏日中展现独特的魅力。这款裙子采用优质面料，舒适透气，搭配简约的剪裁，完美诠释了赫本风格的经典与时尚。</textarea>
+                            <label>脚本文案</label>
+                            <textarea id="scriptText" placeholder="请输入视频文案..." oninput="updateCharacterCount()">跑步想要轻松，这双运动鞋千万要码住。唯品会大牌好货每天3折疯抢。这双安踏跑步鞋3.5折起，新用户可领至高25元券。双层中底能消化冲击，落地平稳保护膝盖，网眼排气满足慢跑。点击链接赶紧下单吧</textarea>
                             <div class="character-count">
-                                <span id="charCount">85</span>/102
+                                <span id="charCount">94</span>/102
                             </div>
                         </div>
 
@@ -1353,11 +1440,8 @@
                                             <span class="checkmark"></span>
                                             BGM
                                         </label>
-                                        <label class="checkbox-label small circular-checkbox">
-                                            <input type="checkbox" id="enableChangeBGM" onchange="handleVideoOptionChange('enableChangeBGM', this.checked)">
-                                            <span class="checkmark circular"></span>
-                                            更换BGM
-                                        </label>
+                                        <button type="button" class="bgm-change-link" onclick="openBgmLibrary()">更换BGM</button>
+                                        <span class="selected-bgm-label" id="selectedBgmLabel"></span>
                                     </div>
                                     <div class="option-item">
                                         <label class="checkbox-label small">
@@ -1525,6 +1609,80 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- BGM 库弹窗 -->
+    <div class="bgm-library-modal" id="bgmLibraryModal">
+        <div class="bgm-library-container">
+            <div class="bgm-library-header">
+                <h3>BGM 库</h3>
+                <button type="button" class="close-btn" onclick="closeBgmLibrary()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="bgm-filter-section">
+                <div class="bgm-filter-row">
+                    <div class="bgm-filter-item">
+                        <label>音频名称</label>
+                        <input type="text" id="bgmFilterAudioName" class="bgm-filter-input" placeholder="请输入音频名称">
+                    </div>
+                    <div class="bgm-filter-item">
+                        <label>歌曲名称</label>
+                        <input type="text" id="bgmFilterSongName" class="bgm-filter-input" placeholder="请输入歌曲名称">
+                    </div>
+                    <div class="bgm-filter-item">
+                        <label>创建人</label>
+                        <input type="text" id="bgmFilterCreator" class="bgm-filter-input" placeholder="请输入手机号">
+                    </div>
+                    <div class="bgm-filter-item">
+                        <label>一级品类</label>
+                        <select id="bgmFilterCategory" class="bgm-filter-select">
+                            <option value="">请选择一级品类</option>
+                            <option value="服装鞋帽">服装鞋帽</option>
+                            <option value="美妆护肤">美妆护肤</option>
+                            <option value="运动户外">运动户外</option>
+                            <option value="家居生活">家居生活</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bgm-filter-row bgm-filter-row-secondary">
+                    <div class="bgm-filter-item bgm-filter-date">
+                        <label>创建时间</label>
+                        <div class="bgm-date-range">
+                            <input type="date" id="bgmFilterStartDate" class="bgm-filter-input">
+                            <span>至</span>
+                            <input type="date" id="bgmFilterEndDate" class="bgm-filter-input">
+                        </div>
+                    </div>
+                    <div class="bgm-filter-item">
+                        <label>标签</label>
+                        <button type="button" class="btn btn-outline btn-sm bgm-tag-filter-btn">
+                            <i class="fas fa-filter"></i>
+                            筛选
+                        </button>
+                    </div>
+                    <div class="bgm-filter-actions">
+                        <button type="button" class="btn btn-primary" onclick="searchBgmLibrary()">搜索</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetBgmLibraryFilters()">重置</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bgm-library-content">
+                <div class="bgm-grid" id="bgmGrid"></div>
+                <div class="bgm-pagination">
+                    <span id="bgmCountText">共0条</span>
+                    <div class="bgm-pagination-controls" id="bgmPaginationControls"></div>
+                </div>
+            </div>
+
+            <div class="bgm-library-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeBgmLibrary()">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmBgmBtn" onclick="confirmBgmSelection()" disabled>确认选择</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="script.js?v=automation-mode-43"></script>
 </body>
 </html>
