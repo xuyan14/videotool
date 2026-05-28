@@ -20,6 +20,14 @@ const totalSteps = 4;
 window.currentProductionMode = window.currentProductionMode || 'manual';
 const mockTaskCoverUrl = 'https://h2.appsimg.com/a.appsimg.com/upload/merchandise/pdcvis/102824/2026/0414/158/35a89d90-188a-4205-8ddf-20a8cee3c252.jpg';
 const editorSegmentPreviewUrl = 'https://h2.appsimg.com/a.appsimg.com/upload/merchandise/pdcvis/102824/2026/0211/47/b8f189d2-8131-43ef-9873-ffc738bb6afd_750x8000_85.jpg!85.webp';
+
+/** 编辑页时间轴默认片段（含镜头名称，与分镜镜头描述一致） */
+const DEFAULT_EDITOR_TIMELINE_SEGMENTS = [
+    { id: 1, thumbnail: editorSegmentPreviewUrl, lensName: '开场介绍' },
+    { id: 2, thumbnail: editorSegmentPreviewUrl, lensName: '面料质感展示' },
+    { id: 3, thumbnail: editorSegmentPreviewUrl, lensName: '荷叶领口设计' },
+    { id: 4, thumbnail: editorSegmentPreviewUrl, lensName: '搭配场景展示' }
+];
 const demoScriptText = '跑步想要轻松，这双运动鞋千万要码住。唯品会大牌好货每天3折疯抢。这双安踏跑步鞋3.5折起，新用户可领至高25元券。双层中底能消化冲击，落地平稳保护膝盖，网眼排气满足慢跑。点击链接赶紧下单吧';
 const demoSellingPointText = '双层中底设计消化冲击，落地平稳从而保护膝盖，网眼排气孔设计满足日常慢跑的透气需求';
 
@@ -2233,26 +2241,31 @@ function initializeEditorVideoPlayer() {
     }
 }
 
+function buildTimelineSegmentHtml(segment, index, isSelected) {
+    const lensName = segment.lensName || `镜头${segment.id}`;
+    return `
+        <div class="timeline-segment ${isSelected ? 'selected' : ''}"
+             data-segment-index="${index}"
+             data-lens-name="${lensName.replace(/"/g, '&quot;')}"
+             title="${lensName} · 单击选择，双击替换视频">
+            <div class="segment-thumb-wrap">
+                <img src="${segment.thumbnail}" alt="片段${segment.id}">
+                <div class="segment-number">${segment.id}</div>
+            </div>
+            <div class="segment-lens-name">${lensName}</div>
+        </div>
+    `;
+}
+
 // 初始化时间轴
 function initializeTimeline() {
     const timelineTrack = document.getElementById('timelineTrack');
-    const segments = [
-        { id: 1, thumbnail: editorSegmentPreviewUrl },
-        { id: 2, thumbnail: editorSegmentPreviewUrl },
-        { id: 3, thumbnail: editorSegmentPreviewUrl },
-        { id: 4, thumbnail: editorSegmentPreviewUrl }
-    ];
-    
-    timelineTrack.innerHTML = segments.map((segment, index) => `
-        <div class="timeline-segment ${index === 0 ? 'selected' : ''}" 
-             data-segment-index="${index}"
-             title="单击选择，双击替换视频">
-            <img src="${segment.thumbnail}" alt="片段${segment.id}">
-            <div class="segment-number">${segment.id}</div>
-        </div>
-    `).join('');
-    
-    // 添加事件监听器
+    if (!timelineTrack) return;
+
+    timelineTrack.innerHTML = DEFAULT_EDITOR_TIMELINE_SEGMENTS.map((segment, index) =>
+        buildTimelineSegmentHtml(segment, index, index === 0)
+    ).join('');
+
     addTimelineSegmentListeners();
 }
 
@@ -2266,7 +2279,8 @@ function selectTimelineSegment(index) {
     // 更新视频播放器显示对应的片段
     updateVideoPlayer(index);
     
-    showMessage(`已选择片段 ${index + 1}`, 'info');
+    const lensLabel = segments[index]?.dataset.lensName || `镜头${index + 1}`;
+    showMessage(`已选择：${lensLabel}`, 'info');
 }
 
 // 更新视频播放器
@@ -2341,17 +2355,18 @@ function addTimelineSegmentListeners() {
 function addTimelineSegment() {
     const timelineTrack = document.getElementById('timelineTrack');
     const newSegmentId = timelineTrack.children.length + 1;
-    
-    const newSegment = document.createElement('div');
-    newSegment.className = 'timeline-segment';
-    newSegment.dataset.segmentIndex = newSegmentId - 1;
-    newSegment.innerHTML = `
-        <img src="https://youke1.picui.cn/s1/2025/08/25/68abcee61f235.png" alt="片段${newSegmentId}">
-        <div class="segment-number">${newSegmentId}</div>
-    `;
-    
+    const lensName = `镜头${newSegmentId}`;
+
+    const wrap = document.createElement('div');
+    wrap.innerHTML = buildTimelineSegmentHtml({
+        id: newSegmentId,
+        thumbnail: editorSegmentPreviewUrl,
+        lensName
+    }, newSegmentId - 1, false).trim();
+    const newSegment = wrap.firstElementChild;
+
     timelineTrack.appendChild(newSegment);
-    showMessage(`已添加片段 ${newSegmentId}`, 'success');
+    showMessage(`已添加片段 ${newSegmentId}（${lensName}）`, 'success');
 }
 
 // 初始化编辑器视频播放器
@@ -5062,12 +5077,16 @@ function confirmVideoReplace() {
     
     const segments = document.querySelectorAll('.timeline-segment');
     const targetSegment = segments[currentReplaceSegmentIndex];
-    const segmentImg = targetSegment.querySelector('img');
-    
+    const segmentImg = targetSegment.querySelector('.segment-thumb-wrap img');
+    const lensNameEl = targetSegment.querySelector('.segment-lens-name');
+
     if (selectedMaterial) {
-        // 使用素材库中的视频
         segmentImg.src = selectedMaterial.thumbnail;
-        showMessage(`片段 ${currentReplaceSegmentIndex + 1} 已替换为素材库视频`, 'success');
+        const lensLabel = selectedMaterial.title || selectedMaterial.name || '素材库视频';
+        if (lensNameEl) lensNameEl.textContent = lensLabel;
+        targetSegment.dataset.lensName = lensLabel;
+        targetSegment.title = `${lensLabel} · 单击选择，双击替换视频`;
+        showMessage(`片段 ${currentReplaceSegmentIndex + 1} 已替换为「${lensLabel}」`, 'success');
     } else if (newVideoFile) {
         // 使用上传的视频
         const canvas = document.createElement('canvas');
@@ -5082,9 +5101,13 @@ function confirmVideoReplace() {
         ctx.fillText('新视频', 50, 35);
         
         segmentImg.src = canvas.toDataURL();
-        showMessage(`片段 ${currentReplaceSegmentIndex + 1} 已替换为上传视频`, 'success');
+        const uploadLabel = newVideoFile.name ? newVideoFile.name.replace(/\.[^.]+$/, '') : '自定义上传';
+        if (lensNameEl) lensNameEl.textContent = uploadLabel;
+        targetSegment.dataset.lensName = uploadLabel;
+        targetSegment.title = `${uploadLabel} · 单击选择，双击替换视频`;
+        showMessage(`片段 ${currentReplaceSegmentIndex + 1} 已替换为「${uploadLabel}」`, 'success');
     }
-    
+
     closeVideoReplaceModal();
 }
 
